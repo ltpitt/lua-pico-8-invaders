@@ -5,10 +5,34 @@ t=0
 
 function _init()
  ship = {sp=1,x=60,y=60}
+ bullets = {}
+end
+
+function fire()
+ local b = {
+  sp=0,
+  x=ship.x,
+  y=ship.y-6,
+  dx=0,
+  dy=-3
+ }
+ add(bullets,b)
+end
+
+function bullet_update()
+ for b in all(bullets) do
+  b.x+=b.dx
+  b.y+=b.dy
+ end
+end
+
+function bullet_animation()
+ for b in all(bullets) do
+  spr(b.sp,b.x,b.y)
+ end
 end
 
 function ship_animation(animation)
-
  if animation=="down" then
   first_frame=2
   second_frame=3
@@ -25,51 +49,47 @@ function ship_animation(animation)
   first_frame=1
   second_frame=1
  end
-
- t=t+1
  if (t%8<4) then
    ship.sp=first_frame
  else
    ship.sp=second_frame
  end
-
 end
 
-
 function _update()
-
+ t=t+1
+ bullet_update()
  if ship.x > 0 and btn(0) then
   ship.x-=1
   ship_animation("left")
  end
-
  if ship.x < 120 and btn(1) then
   ship.x+=1
   ship_animation("right")
  end
-
  if ship.y > 0 and btn(2) then
   ship.y-=1
   ship_animation("down")
  end
-
  if ship.y < 120 and btn(3) then
   ship.y+=1
   ship_animation("up")
  end
-
  if not btn(0) and
     not btn(1) and
     not btn(2) and
     not btn(3) then
     ship_animation("stop")
  end
-
+ if btnp(5) then
+  fire()
+ end
 end
 
 function _draw()
  cls()
  spr(ship.sp,ship.x,ship.y)
+ bullet_animation()
  print("x: "..ship.x.." y: "..ship.y, 0, 0)
 end
 
