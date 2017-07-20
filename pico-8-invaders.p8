@@ -1,11 +1,49 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+
+stars = {}
+num_stars = 10
 t=0
 
 function _init()
- ship = {sprite=1,x=60,y=60}
+ ship = {}
+ ship.sprite=1
+ ship.x=60
+ ship.y=60
+ ship.upgrade=0
  bullets = {}
+ upgrade = {}
+ upgrade.frame = 10
+ init_stars()
+end
+
+function init_stars()
+ for i=1,num_stars do
+  add(stars, {rnd(128), rnd(128), 1+rnd(3)})
+ end
+end
+
+
+function update_stars()
+ for i=1,num_stars do
+  y = stars[i][2]
+  y += stars[i][3]
+  if y > 128 then
+   y = y - 128
+  end
+  stars[i][2] = y
+ end
+end
+
+function draw_stars()
+ for i=1,num_stars do
+  star = stars[i]
+  x = star[1]
+  y = star[2]
+  col = 4+star[3]
+  pset(x,y,col)
+ end
 end
 
 function fire()
@@ -19,16 +57,21 @@ function fire()
   dy=-3
  }
  add(bullets,b)
+ if (t%8<4) then
+  upgrade.frame = 10
+ else
+  upgrade.frame = 11
+ end
 end
 
-function bullet_update()
+function update_bullet()
  for b in all(bullets) do
   b.x+=b.dx
   b.y+=b.dy
  end
 end
 
-function bullet_animation()
+function draw_bullets()
  for b in all(bullets) do
   if (t%8<4) then
    b.sprite=b.first_frame
@@ -39,7 +82,8 @@ function bullet_animation()
  end
 end
 
-function ship_animation(animation)
+function animate_ship(animation)
+
  if animation=="down" then
   first_frame=2
   second_frame=3
@@ -65,28 +109,29 @@ end
 
 function _update()
  t=t+1
- bullet_update()
+ update_bullet()
+ update_stars()
  if ship.x > 0 and btn(0) then
   ship.x-=1
-  ship_animation("left")
+  animate_ship("left")
  end
  if ship.x < 120 and btn(1) then
   ship.x+=1
-  ship_animation("right")
+  animate_ship("right")
  end
  if ship.y > 0 and btn(2) then
   ship.y-=1
-  ship_animation("down")
+  animate_ship("down")
  end
  if ship.y < 120 and btn(3) then
   ship.y+=1
-  ship_animation("up")
+  animate_ship("up")
  end
  if not btn(0) and
     not btn(1) and
     not btn(2) and
     not btn(3) then
-    ship_animation("stop")
+    animate_ship("stop")
  end
  if btnp(5) then
   fire()
@@ -98,14 +143,16 @@ function _draw()
  print("(an)alpha/beta version 0.0001", 0, 10)
  print("brought to you by figueirisoft", 0, 120)
  print("x: "..ship.x.." y: "..ship.y, 0, 0)
+ draw_stars()
+ draw_bullets()
  spr(ship.sprite,ship.x,ship.y)
- bullet_animation()
+ spr(upgrade.frame,ship.x,ship.y)
 end
 
 __gfx__
 00000000060880600608806006088060060880600608806006088060060880600608806006088060000000400000002000000000000000000000000000000000
 00000000058888500588885005888850058888500588885005888850058888500588885005888850000000000000000000000000000000000000000000000000
-00700700008cc800008cc800008cc800008dd800008dd800008dc800008dc800008cd800008cd800000000000000000000000000000000000000000000000000
+00700700008cc800008cc800008cc800008dd800008dd800008cd800008cd800008dc800008dc800000000000000000000000000000000000000000000000000
 00077000008dd800008dd800008dd800008cc800908cc8090a8dd8009a8dd800008dd8a0008dd8a9000000000000000000000000000000000000000000000000
 00077000082882800828828008288280a828828aa828828a08288280082882800828828008288280000000000000000000000000000000000000000000000000
 00700700822222288222222882222228822222288222222882222228822222288222222882222228000000000000000000000000000000000000000000000000
