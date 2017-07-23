@@ -42,6 +42,7 @@ function update_stars()
   y += stars[i][3]
   if y > 128 then
    y = y - 128
+   stars[i][1] = rnd(127)
   end
   stars[i][2] = y
  end
