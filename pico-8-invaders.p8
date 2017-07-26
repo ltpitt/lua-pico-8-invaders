@@ -6,7 +6,6 @@ stars = {}
 num_stars = 10
 t=0
 
-
 function startmusic(n)
  if (not music_playing) then
      music(n) music_playing=true
@@ -60,7 +59,7 @@ end
 
 function fire()
  startmusic(0)
- if (t%5==0) then
+ if (t%1==0) then
  local b = {
   sprite=0,
   first_frame=18,
@@ -145,7 +144,7 @@ function update_ship()
     not btn(3) then
     animate_ship("stop")
  end
- if btnp(5) then
+ if btn(5) then
   fire()
  end
 end
