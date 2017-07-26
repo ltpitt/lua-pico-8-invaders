@@ -2,11 +2,12 @@
 A Space Invaders (re)implementation for the lovely [PICO-8 Fantasy Console](http://www.lexaloffle.com/pico-8.php "PICO-8 Fantasy Console"), written in LUA
 
 ## How to install
-* Simply clone this repo into your PICO-8 folder
 * Start PICO-8
-* cd lua-pico-8-invaders
-* load pico-8-invaders
-* run
+* Enter the command: folder
+* Simply clone this repo (or expand the ZIP file) into the folder that you now see
+* Enter the command: cd lua-pico-8-invaders
+* Enter the command: load pico-8-invaders
+* Enter the command: run
 * Enjoy!
 
 If you want to test the game in your browser:  
