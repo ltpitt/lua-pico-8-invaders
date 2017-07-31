@@ -1,7 +1,6 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
-
 --
 -- helper functions
 --
@@ -16,11 +15,137 @@ function stopmusic()
  music(-1, 300) music_playing=false
 end
 
---
--- game
---
+function fire()
+ startmusic(0)
+ if (timer%ship.firerate==0) then
+ local b = {
+  sprite=0,
+  first_frame=18,
+  second_frame=19,
+  x=ship.x,
+  y=ship.y-6,
+  dx=0,
+  dy=-3
+ }
+ add(bullets,b)
+ sfx(0)
+ end
+ if (timer%8<4) then
+  upgrade.frame = 10
+ else
+  upgrade.frame = 11
+ end
+end
+
+function animate_ship(animation)
+ if animation=="down" then
+  first_frame=2
+  second_frame=3
+ elseif animation=="up" then
+  first_frame=4
+  second_frame=5
+ elseif animation=="right" then
+  first_frame=6
+  second_frame=7
+ elseif animation=="left" then
+  first_frame=8
+  second_frame=9
+ elseif animation=="stop" then
+  first_frame=1
+  second_frame=1
+ end
+ if (timer%8<4) then
+   ship.sprite=first_frame
+ else
+   ship.sprite=second_frame
+ end
+end
+
+
+-- game states
+game_states = {
+    splash = 0,
+    game = 1,
+    pause = 2,
+    gameover = 3
+}
+
+state = game_states.splash
+
+function change_state(new_state)
+ cls()
+ state = new_state
+end
+
+-- entities
+entity = {}
+entity.__index = entity
+
+function entity.create(x,y,w,h)
+ local new_entity = {}
+ setmetatable(new_entity, entity)
+
+ new_entity.x = x
+ new_entity.y = y
+ new_entity.h = h
+ new_entity.w = w
+
+ return new_entity
+end
+
+function entity:collide(other_entity)
+ return other_entity.x < self.x + self.w and self.x < other_entity.x + other_entity.w
+        and other_entity.y < self.y + self.h and self.y < other_entity.y + other_entity.h
+end
+
+-- add other vars as convenience to this player entity
+-- for example, the sprite number or the lives left ;)
+player = entity.create(0,0,8,8)
+
+-- player input
+function handle_input()
+ -- left
+ if btn(0) then
+     player.x -= 1
+     if player.x < 0 then
+         player.x = 0
+     end
+ end
+ -- right
+ if btn(1) then
+     player.x += 1
+     if player.x > 128 then
+         player.x = 128
+     end
+ end
+ -- up
+ if btn(2) then
+     player.y -= 1
+     if player.y < 0 then
+         player.y = 0
+     end
+ end
+ -- down
+ if btn(3) then
+    player.y += 1
+     if player.y > 128 then
+         player.y = 128
+     end
+ end
+
+ -- button 1
+ if btn(4) then
+ end
+
+ -- button 2
+ if btn(5) then
+ end
+end
+
+-- pico8 game funtions
 
 function _init()
+ cls()
  timer=0
  stars={}
  num_stars=10
@@ -54,17 +179,87 @@ function _init()
  }
 end
 
+
 function init_stars()
  for i=1,num_stars do
   add(stars, {rnd(128), rnd(128), 1+rnd(3)})
  end
 end
 
+function draw_background(bgspr,texture_w,texture_h)
+ for lx=0,16 do
+  for ly=0,16 do
+   spr(bgspr,lx*16,ly*16,texture_w,texture_h)
+  end
+ end
+end
+
+function draw_bullets()
+ for b in all(bullets) do
+  if (timer%8<4) then
+   b.sprite=b.first_frame
+  else
+   b.sprite=b.second_frame
+  end
+  spr(b.sprite,b.x,b.y)
+ end
+end
+
+function draw_hud()
+ -- print score
+ print("score:", 0, 0, colors.grey)
+ -- print lives
+ print("lives:", 70, 0, colors.grey)
+ spr(1,100,0)
+end
+
+function draw_ship()
+ spr(ship.sprite,ship.x,ship.y)
+ spr(upgrade.frame,ship.x,ship.y)
+end
+
+function draw_powerups()
+ if ship.y > 70 then
+  spr(17,64,64)
+  ship.firerate=30
+ else
+  ship.firerate=5
+ end
+end
+
+function draw_stars()
+ for i=1,num_stars do
+  star = stars[i]
+  x = star[1]
+  y = star[2]
+  col = 4+star[3]
+  pset(x,y,col)
+ end
+end
+
+function _draw()
+ cls()
+ if state == game_states.splash then
+     draw_splash()
+ elseif state == game_states.game then
+     draw_game()
+ elseif state == game_states.pause then
+     draw_pause()
+ elseif state == game_states.gameover then
+     draw_gameover()
+ end
+end
+
 function _update()
- timer=timer+1
- update_bullet()
- update_stars()
- update_ship()
+ if state == game_states.splash then
+     update_splash()
+ elseif state == game_states.game then
+     update_game()
+ elseif state == game_states.pause then
+     update_pause()
+ elseif state == game_states.gameover then
+     update_gameover()
+ end
 end
 
 function update_bullet()
@@ -114,7 +309,35 @@ function update_stars()
  end
 end
 
-function _draw()
+
+
+
+
+-- splash
+
+function update_splash()
+ -- usually we want the player to press one button
+ -- if btn(5) then
+ --     change_state()
+ -- end
+end
+
+function draw_splash()
+ rectfill(0,0,screen_size,screen_size,11)
+ local text = "hello world"
+ write(text, text_x_pos(text), 52,7)
+end
+
+-- game
+
+function update_game()
+ timer=timer+1
+ update_bullet()
+ update_stars()
+ update_ship()
+end
+
+function draw_game()
  cls()
  draw_stars()
  draw_hud()
@@ -123,94 +346,64 @@ function _draw()
  draw_ship()
 end
 
-function draw_bullets()
- for b in all(bullets) do
-  if (timer%8<4) then
-   b.sprite=b.first_frame
-  else
-   b.sprite=b.second_frame
-  end
-  spr(b.sprite,b.x,b.y)
- end
+-- pause
+
+function update_pause()
+
 end
 
-function draw_hud()
- -- print score
- print("score:", 0, 0, colors.grey)
- -- print lives
- print("lives:", 70, 0, colors.grey)
- spr(1,100,0)
+function draw_pause()
+
 end
 
-function draw_ship()
- spr(ship.sprite,ship.x,ship.y)
- spr(upgrade.frame,ship.x,ship.y)
+-- game over
+
+function update_gameover()
+
 end
 
-function draw_powerups()
- if ship.y > 70 then
-  spr(17,64,64)
-  ship.firerate=30
- else
-  ship.firerate=5
- end
+function draw_gameover()
+
 end
 
-function draw_stars()
- for i=1,num_stars do
-  star = stars[i]
-  x = star[1]
-  y = star[2]
-  col = 4+star[3]
-  pset(x,y,col)
+-- utils
+
+-- change this if you use a different resolution like 64x64
+screen_size = 128
+
+-- calculate center position in x axis
+-- this is asuming the text uses the system font which is 4px wide
+function text_x_pos(text)
+ local letter_width = 4
+
+ -- first calculate how wide is the text
+ local width = #text * letter_width
+
+ -- if it's wider than the screen then it's multiple lines so we return 0
+ if width > screen_size then
+     return 0
  end
+
+ return screen_size / 2 - flr(width / 2)
 end
 
-function fire()
- startmusic(0)
- if (timer%ship.firerate==0) then
- local b = {
-  sprite=0,
-  first_frame=18,
-  second_frame=19,
-  x=ship.x,
-  y=ship.y-6,
-  dx=0,
-  dy=-3
- }
- add(bullets,b)
- sfx(0)
+-- prints black bordered text
+function write(text,x,y,color)
+ for i=0,2 do
+     for j=0,2 do
+         print(text,x+i,y+j, 0)
+     end
  end
- if (timer%8<4) then
-  upgrade.frame = 10
- else
-  upgrade.frame = 11
- end
+ print(text,x+1,y+1,color)
 end
 
-function animate_ship(animation)
- if animation=="down" then
-  first_frame=2
-  second_frame=3
- elseif animation=="up" then
-  first_frame=4
-  second_frame=5
- elseif animation=="right" then
-  first_frame=6
-  second_frame=7
- elseif animation=="left" then
-  first_frame=8
-  second_frame=9
- elseif animation=="stop" then
-  first_frame=1
-  second_frame=1
- end
- if (timer%8<4) then
-   ship.sprite=first_frame
- else
-   ship.sprite=second_frame
- end
+
+-- returns if module of a/b == 0. equals to a % b == 0 in other languages
+function mod_zero(a,b)
+ return a - flr(a/b)*b == 0
 end
+
+
 
 __gfx__
 00000000060880600608806006088060060880600608806006088060060880600608806006088060000000400000002000000000000000000000000000000000
