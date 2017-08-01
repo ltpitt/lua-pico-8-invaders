@@ -324,8 +324,11 @@ end
 
 function draw_splash()
  rectfill(0,0,screen_size,screen_size,11)
- local text = "hello world"
+ local text = "splash screen placeholder"
  write(text, text_x_pos(text), 52,7)
+ if btn(4) then
+  state = game_states.game
+ end
 end
 
 -- game
