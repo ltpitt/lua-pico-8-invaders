@@ -102,11 +102,24 @@ end
 -- for example, the sprite number or the lives left ;)
 ship = entity.create(60,120,8,8)
 ship.firerate=5
-powerup_green = entity.create(64,64,6,6)
-powerup_red = entity.create(64,64,6,6)
+powerup_green = entity.create(14,64,6,6)
+powerup_red = entity.create(24,64,6,6)
+powerup_green_big = entity.create(34,64,6,6)
+powerup_red_big = entity.create(44,64,6,6)
+
 enemy_1 = entity.create(24,24,8,8)
 enemy_1.sprite = 32
-powerup_red.sprite = 16
+enemy_2 = entity.create(34,24,8,8)
+enemy_2.sprite = 33
+enemy_3 = entity.create(44,24,8,8)
+enemy_3.sprite = 34
+enemy_4 = entity.create(54,24,8,8)
+enemy_4.sprite = 35
+
+powerup_red_big.sprite = 16
+powerup_green_big.sprite = 17
+powerup_red.sprite = 18
+powerup_green.sprite = 19
 
 -- pico8 game funtions
 
@@ -180,6 +193,15 @@ end
 
 function draw_powerups()
  spr(enemy_1.sprite, enemy_1.x, enemy_1.y)
+ spr(enemy_2.sprite, enemy_2.x, enemy_2.y)
+ spr(enemy_3.sprite, enemy_3.x, enemy_3.y)
+ spr(enemy_4.sprite, enemy_4.x, enemy_4.y)
+ spr(powerup_red.sprite, powerup_red.x, powerup_red.y)
+ spr(powerup_red_big.sprite, powerup_red_big.x, powerup_red_big.y)
+ spr(powerup_green.sprite, powerup_green.x, powerup_green.y)
+ spr(powerup_green_big.sprite, powerup_green_big.x, powerup_green_big.y)
+
+
  if not ship.collide(powerup_red) then
   spr(powerup_red.sprite, powerup_red.x, powerup_red.y)
  else
