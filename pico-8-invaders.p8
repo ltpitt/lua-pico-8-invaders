@@ -61,19 +61,9 @@ function animate_ship(animation)
 end
 
 
--- game states
-game_states = {
-    splash = 0,
-    game = 1,
-    pause = 2,
-    gameover = 3
-}
-
-state = game_states.splash
-
 function change_state(new_state)
  cls()
- state = new_state
+ game.state = new_state
 end
 
 -- entities
@@ -92,46 +82,65 @@ function entity.create(x,y,w,h)
  return new_entity
 end
 
+-- this function is not working and therefore not used for the moment
 function entity:collide(other_entity)
- --entity.x = 64
- --return other_entity.x < self.x + self.w and self.x < other_entity.x + other_entity.w
- --and other_entity.y < self.y + self.h and self.y < other_entity.y + other_entity.h
+ return other_entity.x < self.x + self.w and self.x < other_entity.x + other_entity.w
+ and other_entity.y < self.y + self.h and self.y < other_entity.y + other_entity.h
 end
 
--- add other vars as convenience to this player entity
--- for example, the sprite number or the lives left ;)
-ship = entity.create(60,120,8,8)
-ship.firerate=5
-powerup_green = entity.create(14,64,6,6)
-powerup_red = entity.create(24,64,6,6)
-powerup_green_big = entity.create(34,64,6,6)
-powerup_red_big = entity.create(44,64,6,6)
+function are_colliding(sprite_a, sprite_b)
+  return (abs(sprite_a.x - sprite_b.x) * 2 < (sprite_a.w + sprite_b.w)) and
+         (abs(sprite_a.y - sprite_b.y) * 2 < (sprite_a.h + sprite_b.h))
+end
 
-enemy_1 = entity.create(24,24,8,8)
-enemy_1.sprite = 32
-enemy_2 = entity.create(34,24,8,8)
-enemy_2.sprite = 33
-enemy_3 = entity.create(44,24,8,8)
-enemy_3.sprite = 34
-enemy_4 = entity.create(54,24,8,8)
-enemy_4.sprite = 35
-
-powerup_red_big.sprite = 16
-powerup_green_big.sprite = 17
-powerup_red.sprite = 18
-powerup_green.sprite = 19
 
 -- pico8 game funtions
 
 function _init()
  cls()
  timer=0
+ -- game states
+ game = {}
+ game.states = {
+     splash = 0,
+     game = 1,
+     pause = 2,
+     gameover = 3
+ }
+ game.state = game.states.splash
+ game.score = 0
+ -- stars
  stars={}
  num_stars=10
+ init_stars()
+ -- bullets
  bullets={}
+ -- upgrades
  upgrade={}
  upgrade.frame=10
- init_stars()
+ -- powerups
+ powerups={}
+ -- ship
+ ship = entity.create(60,120,8,8)
+ ship.firerate=5
+ -- entities creation example
+ powerup_green = entity.create(14,64,6,6)
+ powerup_red = entity.create(24,64,6,6)
+ powerup_green_big = entity.create(34,64,6,6)
+ powerup_red_big = entity.create(44,64,6,6)
+ enemy_1 = entity.create(24,24,8,8)
+ enemy_1.sprite = 32
+ enemy_2 = entity.create(34,24,8,8)
+ enemy_2.sprite = 33
+ enemy_3 = entity.create(44,24,8,8)
+ enemy_3.sprite = 34
+ enemy_4 = entity.create(54,24,8,8)
+ enemy_4.sprite = 35
+ powerup_red_big.sprite = 16
+ powerup_green_big.sprite = 17
+ powerup_red.sprite = 18
+ powerup_green.sprite = 19
+ -- colors
  colors={
   black=0,
   darkblue=1,
@@ -180,7 +189,7 @@ end
 
 function draw_hud()
  -- print score
- print("score:" .. type(powerup_red), 0, 0, colors.grey)
+ print("score:" .. game.score, 0, 0, colors.grey)
  -- print lives
  print("lives:", 70, 0, colors.grey)
  spr(1,100,0)
@@ -201,8 +210,7 @@ function draw_powerups()
  spr(powerup_green.sprite, powerup_green.x, powerup_green.y)
  spr(powerup_green_big.sprite, powerup_green_big.x, powerup_green_big.y)
 
-
- if not ship.collide(powerup_red) then
+ if not are_colliding(ship,powerup_red) then
   spr(powerup_red.sprite, powerup_red.x, powerup_red.y)
  else
   ship.firerate=30
@@ -221,25 +229,25 @@ end
 
 function _draw()
  cls()
- if state == game_states.splash then
+ if game.state == game.states.splash then
      draw_splash()
- elseif state == game_states.game then
+ elseif game.state == game.states.game then
      draw_game()
- elseif state == game_states.pause then
+ elseif game.state == game.states.pause then
      draw_pause()
- elseif state == game_states.gameover then
+ elseif game.state == game.states.gameover then
      draw_gameover()
  end
 end
 
 function _update()
- if state == game_states.splash then
+ if game.state == game.splash then
      update_splash()
- elseif state == game_states.game then
+ elseif game.state == game.states.game then
      update_game()
- elseif state == game_states.pause then
+ elseif game.state == game.states.pause then
      update_pause()
- elseif state == game_states.gameover then
+ elseif game.state == game.states.gameover then
      update_gameover()
  end
 end
@@ -332,7 +340,7 @@ function draw_splash()
  local text = "splash screen placeholder"
  write(text, text_x_pos(text), 52,7)
  if btn(4) then
-  state = game_states.game
+  game.state = game.states.game
  end
 end
 
