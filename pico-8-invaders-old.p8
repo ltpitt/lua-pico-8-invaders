@@ -1,20 +1,86 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
-entities = {}
-bullets = {}
-game = {}
-game.timer = 1
-game.tick = 1
-text="debug"
+function startmusic(n)
+ if (not music_playing) then
+  music(n) music_playing=true
+ end
+end
 
---
---- sprite code
---
-function new_entity(x,y,tick,sprite_list,active,oneshot,move,height,width)
+function stopmusic()
+ music(-1, 300) music_playing=false
+end
+
+function update_timer()
+  game.timer+=1
+  if (game.timer>60) then
+    game.timer = 1
+  end
+end
+
+function fire()
+ if (game.timer%ship.firerate==0) then
+ local b = {
+  sprite=0,
+  first_frame=12,
+  second_frame=13,
+  x=ship.x,
+  y=ship.y-6,
+  dx=0,
+  dy=-3
+ }
+ add(bullets,b)
+ sfx(0)
+ end
+ if (game.timer%8<4) then
+  upgrade.frame = 10
+ else
+  upgrade.frame = 11
+ end
+end
+
+function animate_ship(animation)
+ if animation=="up" then
+  first_frame=2
+  second_frame=3
+ elseif animation=="down" then
+  first_frame=4
+  second_frame=5
+ elseif animation=="right" then
+  first_frame=6
+  second_frame=7
+ elseif animation=="left" then
+  first_frame=8
+  second_frame=9
+ elseif animation=="stop" then
+  first_frame=1
+  second_frame=1
+ end
+ if (game.timer%8<4) then
+   ship.sprite=first_frame
+ else
+   ship.sprite=second_frame
+ end
+end
+
+
+function change_state(new_state)
+ cls()
+ game.state = new_state
+end
+
+-- entities
+entity = {}
+entity.__index = entity
+
+
+
+function entity.create(x,y,w,h,tick,sprite_list,active,oneshot,move,height,width)
  local e = {}
  e.x = x
  e.y = y
+ e.w = w
+ e.h = h
  e.sprite_list = sprite_list
  e.current = 1
  e.tick = tick -- change sprite frame every n refreshes (max 60)
@@ -28,175 +94,208 @@ function new_entity(x,y,tick,sprite_list,active,oneshot,move,height,width)
  return e
 end
 
-function entity_draw(entity)
- if (entity.active == 1) then
-  spr(entity.sprite_list[entity.current],entity.x,entity.y)
+
+function are_colliding(entity_a, entity_b)
+ return entity_a.x < entity_b.x + entity_b.w and entity_b.x < entity_a.x + entity_a.w
+ and entity_a.y < entity_b.y + entity_b.h and entity_b.y < entity_a.y + entity_a.h
+end
+
+
+-- pico8 game funtions
+
+function _init()
+ cls()
+ -- game states
+ game = {}
+ game.states = {
+     splash = 0,
+     game = 1,
+     pause = 2,
+     gameover = 3
+ }
+ game.state = game.states.splash
+ game.score = 0
+ game.timer=0
+ game.screen_size = 128
+ -- stars
+ stars={}
+ num_stars=10
+ init_stars()
+ -- bullets
+ bullets={}
+ -- upgrades
+ upgrade={}
+ upgrade.frame=10
+ -- powerups
+ powerups={}
+ -- ship
+ ship = entity.create(64,121,8,8)
+ --ship = entity.create(60,120,8,8)
+ ship.firerate=5
+ -- entities creation example
+ powerup_green = entity.create(14,64,6,6,1,1)
+ powerup_green.tick = 1
+ powerup_red = entity.create(24,64,6,6,1,1)
+ powerup_red.tick = 1
+ enemy_1 = entity.create(24,24,8,8)
+ enemy_1.sprite = 32
+ enemy_1.tick = 1
+ enemy_2 = entity.create(34,24,8,8)
+ enemy_2.sprite = 33
+ enemy_2.tick = 1
+ enemy_3 = entity.create(44,24,8,8)
+ enemy_3.sprite = 34
+ enemy_3.tick = 1
+ enemy_4 = entity.create(54,24,8,8)
+ enemy_4.sprite = 35
+ enemy_4.tick = 1
+ --powerup_red_big.sprite = 16
+ --powerup_green_big.sprite = 17
+ --powerup_red.sprite = 18
+ --powerup_green.sprite = 19
+ -- colors
+ colors={
+  black=0,
+  darkblue=1,
+  darkpurple=2,
+  darkgreen=3,
+  brown=4,
+  darkgrey=5,
+  grey=6,
+  white=7,
+  red=8,
+  orange=9,
+  yellow=10,
+  green=11,
+  blue=12,
+  purple=13,
+  darkpink=14,
+  pink=15
+ }
+end
+
+
+function init_stars()
+ for i=1,num_stars do
+  add(stars, {rnd(128), rnd(128), 1+rnd(3)})
  end
+end
+
+function draw_background(bgspr,texture_w,texture_h)
+ for lx=0,16 do
+  for ly=0,16 do
+   spr(bgspr,lx*16,ly*16,texture_w,texture_h)
+  end
+ end
+end
+
+function draw_bullets()
+ for b in all(bullets) do
+  if (game.timer%8<4) then
+   b.sprite=b.first_frame
+  else
+   b.sprite=b.second_frame
+  end
+  spr(b.sprite,b.x,b.y)
+ end
+end
+
+function draw_hud()
+ -- print score
+ print("score:" .. game.score, 0, 0, colors.grey)
+ -- print lives
+ print("lives:", 70, 0, colors.grey)
+ spr(1,100,0)
+end
+
+function draw_ship()
+ spr(ship.sprite,ship.x,ship.y)
+ spr(upgrade.frame,ship.x,ship.y)
+end
+
+function draw_entity(entity)
+  if (entity.active == 1) then
+    spr(entity.list[entity.current],entity.x,entity.y)
+  end
 end
 
 function update_entity_animation(entity)
- if entity.player != 1 then
   if (entity.active ==1) then
-   -- check to see if we're on a tick
-   if (game.timer % entity.tick == 1) then
-    if (entity.current < #entity.sprite_list) then
-      entity.current+=1
-    else
-      entity.current=1
-      if (entity.oneshot==1) then
-        del(entities,entity)
-      end
-    end
-   end
-  end
- end
-end
-
-function update_timer()
- game.timer+=1
- if (game.timer>30) then
-   game.timer = 1
- end
-end
-
-function are_colliding(entity_a,entity_b) -- are entities hitting each others boundary and not the same type?
- return entity_b.x < entity_a.x + entity_a.w and entity_a.x < entity_b.x + entity_b.w
- and entity_b.y < entity_a.y + entity_a.h and entity_a.y < entity_b.y + entity_b.h
-end
-
---
---- end of sprite code
---
-
-function make_ship(x,y)
- local sprite_list = {}
- sprite_list[1] = 1
- sprite_list[2] = 1
- ship = new_entity(x,y,5,sprite_list, 1, 0, 1, 8, 6, 1)
- ship.type = "player"
- return ship
-end
-
-function make_powerup(x,y,color)
- local sprite_list = {}
- if color == "red" then
-  sprite_list[1] = 16
-  sprite_list[2] = 17
-  sprite_list[3] = 18
-  sprite_list[4] = 19
- elseif color == "green" then
-  sprite_list[1] = 20
-  sprite_list[2] = 21
-  sprite_list[3] = 22
-  sprite_list[4] = 23
- end
- powerup = new_entity(x,y,1,sprite_list, 1, 0, 1, 7, 7)
- powerup.color = color
- powerup.type = "powerup"
-end
-
-function make_saucer(x,y)
- local sprite_list = {}
- sprite_list[1] = 19
- sprite_list[2] = 20
- sprite_list[3] = 21
- sprite_list[4] = 22
- sprite_list[5] = 23
- new_entity(x,y,5,sprite_list, 1, 0, 1, 8, 8, 1)
-end
-
-function make_explosion(x,y)
- local sprite_list = {}
- sprite_list[1] = 53
- sprite_list[2] = 54
- sprite_list[3] = 55
- sprite_list[4] = 56
- sprite_list[5] = 57
- new_entity(x,y,5,sprite_list, 1, 1, 1, 8, 8, 1)
-end
-
-function make_ship_shot(x,y)
- local bullet = {}
- bullet.dx = 0
- bullet.dy = -2
- bullet.type =1
- bullet.x = x
- bullet.y = y
- bullet.spr = 12
- bullet.h = 1
- bullet.w = 1
- add (bullets, bullet)
-end
-
-function draw_bullet(bullet)
- spr(bullet.spr, bullet.x, bullet.y)
-end
-
-function update_bullet(bullet)
- bullet.x += bullet.dx
- bullet.y += bullet.dy
- if ((bullet.x <0 or bullet.x > 128) or (bullet.y <0 or bullet.y > 128)) then del(bullets, bullet) end
-end
-
-function fire_bullet()
- if (game.timer%ship.firerate==0) then
-  make_ship_shot (ship.x+2, ship.y-6)
- end
-end
-
-function did_bullet_collide(bullet)
- for i=1,#entities do
-  if (are_colliding(bullet, entities[i])) then
-    if entities[i].type != "powerup" then
-     kill_sprite(entities[i])
-     del(bullets, bullet)
+ -- check to see if we're on a tick
+ if (game.timer % entity.tick == 1) then
+  if (entity.current < #entity.list) then
+    entity.current+=1
+  else
+    entity.current =1
+    if (entity.oneshot == 1) then
+      del(entity)
     end
   end
  end
 end
+end
 
-function is_ship_colliding(ship)
- for i=2,#entities do
-  if (are_colliding(ship, entities[i])) then
-   if entities[i].color == "green" then
-    kill_sprite(entities[i])
-    --del(entities, ship)
-   elseif entities[i].color == "red" then
-    kill_sprite(entities[i])
-   end
-  end
+function draw_powerups()
+ spr(enemy_1.sprite, enemy_1.x, enemy_1.y)
+ spr(enemy_2.sprite, enemy_2.x, enemy_2.y)
+ spr(enemy_3.sprite, enemy_3.x, enemy_3.y)
+ spr(enemy_4.sprite, enemy_4.x, enemy_4.y)
+
+ update_entity_animation(powerup_red)
+
+
+ if not are_colliding(ship,powerup_red) then
+  spr(powerup_red.sprite, powerup_red.x, powerup_red.y)
+ else
+  ship.firerate=30
+ end
+
+end
+
+function draw_stars()
+ for i=1,num_stars do
+  star = stars[i]
+  x = star[1]
+  y = star[2]
+  col = 4+star[3]
+  pset(x,y,col)
  end
 end
 
-function are_bullets_colliding()
- foreach(bullets, did_bullet_collide)
+function _draw()
+ cls()
+ if game.state == game.states.splash then
+     draw_splash()
+ elseif game.state == game.states.game then
+     draw_game()
+ elseif game.state == game.states.pause then
+     draw_pause()
+ elseif game.state == game.states.gameover then
+     draw_gameover()
+ end
 end
 
-function kill_sprite(sprite)
- make_explosion(sprite.x, sprite.y)
- del(entities, sprite)
+function _update()
+ if game.state == game.splash then
+     update_splash()
+ elseif game.state == game.states.game then
+     update_game()
+ elseif game.state == game.states.pause then
+     update_pause()
+ elseif game.state == game.states.gameover then
+     update_gameover()
+ end
 end
 
-function animate_ship(animation)
- if animation=="up" then
-  ship.sprite_list[1] = 2
-  ship.sprite_list[2] = 3
- elseif animation=="down" then
-  ship.sprite_list[1] = 4
-  ship.sprite_list[2] = 5
- elseif animation=="right" then
-  ship.sprite_list[1] = 6
-  ship.sprite_list[2] = 7
- elseif animation=="left" then
-  ship.sprite_list[1] = 8
-  ship.sprite_list[2] = 9
- elseif animation=="stop" then
-  ship.sprite_list[1] = 0
-  ship.sprite_list[2] = 1
+function update_bullet()
+ for b in all(bullets) do
+  b.x+=b.dx
+  b.y+=b.dy
  end
 end
 
 function update_ship()
+
  -- left
  if btn(0) then
   animate_ship("left")
@@ -229,13 +328,16 @@ function update_ship()
        ship.y = 128 - ship.h
    end
  end
+
  -- button 1
  if btn(4) then
  end
+
  -- button 2
  if btn(5) then
-   fire_bullet()
+   fire()
  end
+
  -- if ship is not moving
  if not btn(0) and
   not btn(1) and
@@ -243,98 +345,29 @@ function update_ship()
   not btn(3) then
   animate_ship("stop")
  end
+
 end
 
-function _draw()
- cls()
- if game.state == game.states.splash then
-     draw_splash()
- elseif game.state == game.states.game then
-     draw_game()
- elseif game.state == game.states.pause then
-     draw_pause()
- elseif game.state == game.states.gameover then
-     draw_gameover()
- end
-end
-
-function draw_hud()
- -- print score
- --print("score:" .. game.score, 0, 0, colors.grey)
- -- print debug
- print(text, 0, 0, colors.grey)
- -- print lives
- print("lives:", 70, 0, colors.grey)
- spr(0,100,0)
-end
-
-function _update()
- if game.state == game.splash then
-     update_splash()
- elseif game.state == game.states.game then
-     update_game()
- elseif game.state == game.states.pause then
-     update_pause()
- elseif game.state == game.states.gameover then
-     update_gameover()
- end
-end
-
-function _init(  )
- cls()
- -- game states
- game = {}
- game.states = {
-     splash = 0,
-     game = 1,
-     pause = 2,
-     gameover = 3
- }
- game.state = game.states.splash
- game.score = 0
- game.timer = 0
- game.screen_size = 128
- -- stars
- stars={}
- num_stars=10
- init_stars()
- -- colors
- colors={
-  black=0,
-  darkblue=1,
-  darkpurple=2,
-  darkgreen=3,
-  brown=4,
-  darkgrey=5,
-  grey=6,
-  white=7,
-  red=8,
-  orange=9,
-  yellow=10,
-  green=11,
-  blue=12,
-  purple=13,
-  darkpink=14,
-  pink=15
- }
- -- debug
- ship = make_ship(64,100)
- green_powerup = make_powerup(64,32,"green")
- red_powerup = make_powerup(84,32,"red")
- --make_saucer(32,32)
- ship.type = "player"
- ship.firerate = 5
-end
-
-function init_stars()
+function update_stars()
  for i=1,num_stars do
-  add(stars, {rnd(128), rnd(128), 1+rnd(3)})
+  y = stars[i][2]
+  y += stars[i][3]
+  if y > 128 then
+   y = y - 128
+   stars[i][1] = rnd(127)
+  end
+  stars[i][2] = y
  end
 end
+
 
 -- splash
 
 function update_splash()
+ -- usually we want the player to press one button
+ -- if btn(5) then
+ --     change_state()
+ -- end
 end
 
 function draw_splash()
@@ -350,60 +383,40 @@ end
 
 function update_game()
  update_timer()
+ update_bullet()
  update_stars()
- foreach(entities,update_entity_animation)
- foreach(bullets, update_bullet)
- are_bullets_colliding()
- is_ship_colliding(ship)
  update_ship()
 end
 
-function update_stars()
- for i=1,num_stars do
-  y = stars[i][2]
-  y += stars[i][3]
-  if y > 128 then
-   y = y - 128
-   stars[i][1] = rnd(127)
-  end
-  stars[i][2] = y
- end
-end
-
 function draw_game()
- cls(0)
+ cls()
  draw_stars()
  draw_hud()
- foreach(entities,entity_draw)
- foreach(bullets, draw_bullet)
+ draw_bullets()
+ draw_powerups()
+ draw_ship()
  -- debug
  --print(ship.firerate, 64, 64, 3)
-end
-
-function draw_stars()
- for i=1,num_stars do
-  star = stars[i]
-  x = star[1]
-  y = star[2]
-  col = 4+star[3]
-  pset(x,y,col)
- end
 end
 
 -- pause
 
 function update_pause()
+ update_timer()
 end
 
 function draw_pause()
+ update_timer()
 end
 
 -- game over
 
 function update_gameover()
+ update_timer()
 end
 
 function draw_gameover()
+ update_timer()
 end
 
 -- utils
@@ -440,15 +453,17 @@ function mod_zero(a,b)
  return a - flr(a/b)*b == 0
 end
 
+
+
 __gfx__
-06088060060880600608806006088060060880600608806006088060060880600608806006088060000000400000002000000000000000000000000000000000
-05888850058888500588885005888850058888500588885005888850058888500588885005888850000000000000000000000000000000000000000000000000
-008cc800008cc800008cc800008cc800008dd800008dd800008cd800008cd800008dc800008dc800000000000000000000000000000000000000000000000000
-008dd800008dd800008dd800008dd800008cc800908cc8090a8dd8009a8dd800008dd8a0008dd8a900000000000000000a000000090000000a0000a009000090
-08288280082882800828828008288280a828828aa828828a0828828008288280082882800828828000000000000000000a000000090000000a0000a009000090
-8222222882222228822222288222222882222228822222288222222882222228822222288222222800000000000000000a000000090000000a0000a009000090
-0090090009a99a9000a00a0000a00a0000000000000000000000000000000000000000000000000000000000000000000a000000090000000a0000a009000090
-00000000009009000009009009009000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000060880600608806006088060060880600608806006088060060880600608806006088060000000400000002000000000000000000000000000000000
+00000000058888500588885005888850058888500588885005888850058888500588885005888850000000000000000000000000000000000000000000000000
+00700700008cc800008cc800008cc800008dd800008dd800008cd800008cd800008dc800008dc800000000000000000000000000000000000000000000000000
+00077000008dd800008dd800008dd800008cc800908cc8090a8dd8009a8dd800008dd8a0008dd8a900000000000000000a000000090000000a0000a009000090
+00077000082882800828828008288280a828828aa828828a0828828008288280082882800828828000000000000000000a000000090000000a0000a009000090
+0070070082222228822222288222222882222228822222288222222882222228822222288222222800000000000000000a000000090000000a0000a009000090
+000000000000000000a00a0000a00a0000000000000000000000000000000000000000000000000000000000000000000a000000090000000a0000a009000090
+00000000000000000009009009009000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0d6656d00d6656d00d6656d00d6656d00d6656d00d6656d00d6656d00d6656d00000000000000000000000000000000000000000000000000000000000000000
 06088060060880600608806006088060060330600603306006033060060330600000000000000000000000000000000000000000000000000000000000000000
@@ -575,13 +590,13 @@ __gff__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000018000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000018000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000018000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000018000000001800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000018000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000018000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000018000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000017000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000017000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000017000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000017000000001600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000017000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000017000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000017000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
