@@ -15,8 +15,15 @@ function stopmusic()
  music(-1, 300) music_playing=false
 end
 
+function update_timer()
+  game.timer+=1
+  if (game.timer>60) then
+    game.timer = 1
+  end
+end
+
 function fire()
- if (timer%ship.firerate==0) then
+ if (game.timer%ship.firerate==0) then
  local b = {
   sprite=0,
   first_frame=12,
@@ -29,7 +36,7 @@ function fire()
  add(bullets,b)
  sfx(0)
  end
- if (timer%8<4) then
+ if (game.timer%8<4) then
   upgrade.frame = 10
  else
   upgrade.frame = 11
@@ -53,7 +60,7 @@ function animate_ship(animation)
   first_frame=1
   second_frame=1
  end
- if (timer%8<4) then
+ if (game.timer%8<4) then
    ship.sprite=first_frame
  else
    ship.sprite=second_frame
@@ -98,7 +105,6 @@ end
 
 function _init()
  cls()
- timer=0
  -- game states
  game = {}
  game.states = {
@@ -109,6 +115,8 @@ function _init()
  }
  game.state = game.states.splash
  game.score = 0
+ game.timer=0
+ game.screen_size = 128
  -- stars
  stars={}
  num_stars=10
@@ -178,7 +186,7 @@ end
 
 function draw_bullets()
  for b in all(bullets) do
-  if (timer%8<4) then
+  if (game.timer%8<4) then
    b.sprite=b.first_frame
   else
    b.sprite=b.second_frame
@@ -336,7 +344,7 @@ function update_splash()
 end
 
 function draw_splash()
- rectfill(0,0,screen_size,screen_size,11)
+ rectfill(0,0,game.screen_size,game.screen_size,11)
  local text = "splash screen placeholder"
  write(text, text_x_pos(text), 52,7)
  if btn(4) then
@@ -347,7 +355,7 @@ end
 -- game
 
 function update_game()
- timer=timer+1
+ update_timer()
  update_bullet()
  update_stars()
  update_ship()
@@ -365,27 +373,24 @@ end
 -- pause
 
 function update_pause()
-
+ update_timer()
 end
 
 function draw_pause()
-
+ update_timer()
 end
 
 -- game over
 
 function update_gameover()
-
+ update_timer()
 end
 
 function draw_gameover()
-
+ update_timer()
 end
 
 -- utils
-
--- change this if you use a different resolution like 64x64
-screen_size = 128
 
 -- calculate center position in x axis
 -- this is asuming the text uses the system font which is 4px wide
@@ -396,11 +401,11 @@ function text_x_pos(text)
  local width = #text * letter_width
 
  -- if it's wider than the screen then it's multiple lines so we return 0
- if width > screen_size then
+ if width > game.screen_size then
      return 0
  end
 
- return screen_size / 2 - flr(width / 2)
+ return game.screen_size / 2 - flr(width / 2)
 end
 
 -- prints black bordered text
