@@ -333,7 +333,7 @@ end
 
 function init_splash()
  --time variable for the animated logo
- t=0
+ t=1
  --center of screen
  centerx=64  centery=80
  --star coordinates
@@ -402,6 +402,7 @@ end
 
 function draw_splash()
  draw_splash_stars()
+ draw_splash_start_key()
  draw_splash_footer()
  if btn(4) then
   game.state = game.states.game
@@ -417,6 +418,10 @@ function update_splash_logo()
    pal(5)
    spr(64+i, i*8 + x, y) --sprite da definire
  end
+end
+
+function draw_splash_start_key()
+   print("press c key to start",24,90,7)
 end
 
 function draw_splash_footer()
