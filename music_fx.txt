@@ -1,0 +1,19 @@
+#Samples
+0)boss release some kind of bomb/multiple shots
+1)drum game backgroud music (patterns 0 - 2)
+2)bass game backgroud music (patterns 0 - 2)
+3)bell game backgroud music (patterns 0 - 2)
+4)ship shot fx
+5)ship get a shield
+6)ship get a powerup
+7)explosion
+8)keyboard boss song (pattern 5 - 6)
+10)drum intro song (patterns 3 - 4)
+11)drum boss song (pattern 5 - 6)
+12)game over fx
+13)keyboard intro song (patterns 3 - 4)
+
+#Music
+1)game backgroud music (patterns 0 - 2)
+2)intro song (patterns 3 - 4)
+3)boss song (pattern 5 - 6)
