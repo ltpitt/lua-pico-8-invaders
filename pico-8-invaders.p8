@@ -53,7 +53,7 @@ function update_entity_animation(entity)
 end
 
 function update_timer()
- game.timer+=1
+ game.timer = game.timer + 1
  if (game.timer>30) then
    game.timer = 1
  end
@@ -282,7 +282,7 @@ function draw_hud()
 end
 
 function _update()
- if game.state == game.splash then
+ if game.state == game.states.splash then
      update_splash()
  elseif game.state == game.states.game then
      update_game()
@@ -332,8 +332,6 @@ function _init(  )
 end
 
 function init_splash()
- --time variable for the animated logo
- t=1
  --center of screen
  centerx=64  centery=80
  --star coordinates
@@ -396,9 +394,9 @@ end
 
 -- splash
 
---function update_splash()
- --update_splash_logo()
---end
+function update_splash()
+ update_timer()
+end
 
 function draw_splash()
  draw_splash_stars()
@@ -411,9 +409,9 @@ function draw_splash()
 end
 
 function draw_splash_logo()
- for i = 1,14 do
+ for i = 1,15 do
    col = 7
-   t1 = t + i*4
+   t1 = game.timer + i*4
    x = cos(t0)*2
    y = 18 + cos(t1/50)*5
    pal(5)
