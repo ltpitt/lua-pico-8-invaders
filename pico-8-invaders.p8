@@ -1,18 +1,14 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
-entities = {}
-bullets = {}
-game = {}
-game.timer = 1
-game.tick = 1
-text="debug"
+
 
 --
 --- sprite code
 --
-function new_entity(x,y,tick,sprite_list,active,oneshot,move,height,width)
+function new_entity(game_state,x,y,tick,sprite_list,active,oneshot,move,height,width)
  local e = {}
+ e.game_state = game_state
  e.x = x
  e.y = y
  e.sprite_list = sprite_list
@@ -29,23 +25,27 @@ function new_entity(x,y,tick,sprite_list,active,oneshot,move,height,width)
 end
 
 function draw_entities(entity)
- if (entity.active == 1) then
-  spr(entity.sprite_list[entity.current],entity.x,entity.y)
+ if entity.game_state == game.state then
+  if (entity.active == 1) then
+   spr(entity.sprite_list[entity.current],entity.x,entity.y)
+  end
  end
 end
 
 function update_entity_animation(entity)
- if entity.player != 1 then
-  if (entity.active==1) then
-   -- check to see if we're on a tick
-   if (game.timer % entity.tick == 1) then
-    if (entity.current < #entity.sprite_list) then
-      entity.current+=1
-    else
-      entity.current=1
-      if (entity.oneshot==1) then
-        del(entities,entity)
-      end
+ if entity.game_state==game.state then
+  if entity.player != 1 then
+   if (entity.active==1) then
+    -- check to see if we're on a tick
+    if (game.timer % entity.tick == 1) then
+     if (entity.current < #entity.sprite_list) then
+       entity.current+=1
+     else
+       entity.current=1
+       if (entity.oneshot==1) then
+         del(entities,entity)
+       end
+     end
     end
    end
   end
@@ -72,7 +72,7 @@ function make_ship(x,y)
  local sprite_list = {}
  sprite_list[1] = 1
  sprite_list[2] = 1
- ship = new_entity(x,y,5,sprite_list, 1, 0, 1, 8, 6, 1)
+ ship = new_entity("game",x,y,5,sprite_list, 1, 0, 1, 8, 6, 1)
  ship.type = "player"
  return ship
 end
@@ -99,7 +99,7 @@ function make_powerup(x,y,color)
  return powerup
 end
 
-function make_cyclop(x,y,color)
+function make_cyclop(game_state,x,y,color)
  local sprite_list={}
  if color=="green" then
   add_to_sprite=0
@@ -114,7 +114,7 @@ function make_cyclop(x,y,color)
  sprite_list[2] = (33 + add_to_sprite)
  sprite_list[3] = (34 + add_to_sprite)
  sprite_list[4] = (35 + add_to_sprite)
- cyclop=new_entity(x,y,5,sprite_list, 1, 0, 1, 8, 8, 1)
+ cyclop=new_entity(game.states.menu,x,y,5,sprite_list, 1, 0, 1, 8, 8, 1)
  return cyclop
 end
 
@@ -260,8 +260,8 @@ end
 
 function _draw()
  cls()
- if game.state == game.states.splash then
-     draw_splash()
+ if game.state == game.states.menu then
+     draw_menu()
  elseif game.state == game.states.game then
      draw_game()
  elseif game.state == game.states.pause then
@@ -282,8 +282,8 @@ function draw_hud()
 end
 
 function _update()
- if game.state == game.states.splash then
-     update_splash()
+ if game.state == game.states.menu then
+     update_menu()
  elseif game.state == game.states.game then
      update_game()
  elseif game.state == game.states.pause then
@@ -295,26 +295,31 @@ end
 
 function _init(  )
  cls()
- -- game states
- game = {}
- game.states = {
-     splash = 0,
-     game = 1,
-     pause = 2,
-     gameover = 3
+ --
+ -- general game init
+ --
+
+ game = {
+  score = 0,
+  timer = 0,
+  screen_size = 128,
+  tick=1
  }
- game.state = game.states.splash
- game.score = 0
- game.timer = 0
- game.screen_size = 128
- if game.state == game.states.splash then
-     init_splash()
- elseif game.state == game.states.game then
-     init_game()
- elseif game.state == game.states.pause then
-     init_pause()
- elseif game.state == game.states.gameover then
-     init_gameover()
+ game.states = {
+  menu = 0,
+  game = 1,
+  pause = 2,
+  gameover = 3
+ }
+ game.state = game.states.menu
+ entities={}
+ bullets={}
+ text="debug"
+ stars={}
+ stars.number=76
+ stars.game_stars={}
+ for i=1,stars.number do
+  add(stars.game_stars, {rnd(128), rnd(128), 1+rnd(3)})
  end
  -- colors
  colors={
@@ -335,9 +340,10 @@ function _init(  )
   darkpink=14,
   pink=15
  }
-end
+ --
+ -- init_menu
+ --
 
-function init_splash()
  --music
  start_music(3)
  --center of screen
@@ -348,7 +354,6 @@ function init_splash()
  starzv={}
  --2d positions
  starscrx={} starscry={}
- stars=76 --number of stars
  --angle
  angx=0      angy=0      angz=0
  --angle velocity
@@ -362,8 +367,9 @@ function init_splash()
  -- camera movement
  a=0.0001
  b={7,5,7} -- colors
- -- init_splash_stars
- for x=1,stars do
+ -- init_menu_stars
+ stars_number=stars.number
+ for x=1,stars_number do
   add(starx,rnd(256)-128)
   add(stary,rnd(256)-128)
   add(starz,200)
@@ -372,57 +378,36 @@ function init_splash()
   add(starscry,centery)
  end
  cls()
+ -- red cyclop menu
+ make_menu_cyclop(game.states.menu,40,74,"green")
 
- -- red cyclop splash
- make_intro_cyclop(40,74,"green")
+ -- blue cyclop menu
+ make_menu_cyclop(game.states.menu,60,74,"blue")
 
- -- blue cyclop splash
- make_intro_cyclop(60,74,"blue")
-
- -- green cyclop splash
- make_intro_cyclop(80,74,"red")
-
+ -- green cyclop menu
+ make_menu_cyclop(game.states.menu,80,74,"red")
 end
 
 
-function init_game()
- -- init game stars
- game_stars={}
- num_stars=10
- for i=1,num_stars do
-  add(game_stars, {rnd(128), rnd(128), 1+rnd(3)})
- end
- ship = make_ship(64,100)
- green_powerup = make_powerup(64,32,"green")
- red_powerup = make_powerup(84,32,"red")
- green_cyclop = make_cyclop(24,64,"green")
- blue_cyclop = make_cyclop(34,64,"blue")
- red_cyclop = make_cyclop(44,64,"red")
- yellow_cyclop = make_cyclop(54,64,"yellow")
- ----make_saucer(32,32)
- ship.type = "player"
- ship.firerate = 5
-end
-
--- splash
-
-function update_splash()
+-- menu
+function update_menu()
  foreach(entities,update_entity_animation)
  update_timer()
 end
 
-function draw_splash()
- draw_splash_stars()
- draw_splash_logo()
+function draw_menu()
+ draw_menu_stars()
+ draw_menu_logo()
  foreach(entities,draw_entities)
- draw_splash_start_key()
- draw_splash_footer()
+ draw_menu_start_key()
+ draw_menu_footer()
  if btn(4) then
   game.state = game.states.game
  end
+
 end
 
-function draw_splash_logo()
+function draw_menu_logo()
  for i = 1,15 do
    t1 = game.timer + i*10 -- change letters animation type
    x = cos(t0)*2 -- x for the animation
@@ -431,7 +416,7 @@ function draw_splash_logo()
  end
 end
 
-function make_intro_cyclop(x,y,color)
+function make_menu_cyclop(game_state,x,y,color)
  local sprite_list={}
  if color=="red" then
   add_to_sprite=0
@@ -445,23 +430,23 @@ function make_intro_cyclop(x,y,color)
  sprite_list[3] = (98 + add_to_sprite)
  sprite_list[4] = (99 + add_to_sprite)
  sprite_list[5] = (100 + add_to_sprite)
- cyclop=new_entity(x,y,5,sprite_list, 1, 0, 1, 8, 8, 1)
+ cyclop=new_entity(game.states.menu,x,y,5,sprite_list, 1, 0, 1, 8, 8, 1)
  return cyclop
 end
 
 
-function draw_splash_start_key()
+function draw_menu_start_key()
    print("press c key to start",24,90,7)
 end
 
-function draw_splash_footer()
+function draw_menu_footer()
    color = (flr(rnd(19)))
    print("a production amazing software",8,120,color)
 end
 
-function draw_splash_stars()
+function draw_menu_stars()
 
- for x=1,stars do
+ for x=1,stars.number do
   --erase old
   pset(starscrx[x],starscry[x],0)
 
@@ -536,20 +521,20 @@ function update_game()
  update_stars()
  foreach(entities,update_entity_animation)
  foreach(bullets, update_bullet)
- are_bullets_colliding()
- is_ship_colliding(ship)
- update_ship()
+ --are_bullets_colliding()
+ --is_ship_colliding(ship)
+ --update_ship()
 end
 
 function update_stars()
- for i=1,num_stars do
-  y = game_stars[i][2]
-  y += game_stars[i][3]
+ for i=1,stars.number do
+  y = stars.game_stars[i][2]
+  y += stars.game_stars[i][3]
   if y > 128 then
    y = y - 128
-   game_stars[i][1] = rnd(127)
+   stars.game_stars[i][1] = rnd(127)
   end
-  game_stars[i][2] = y
+  stars.game_stars[i][2] = y
  end
 end
 
@@ -561,11 +546,26 @@ function draw_game()
  foreach(bullets, draw_bullet)
  -- debug
  --print(ship.firerate, 64, 64, 3)
+
+ -- init game stars
+
+
+ -- init game
+ --ship = make_ship(64,100)
+ --green_powerup = make_powerup(64,32,"green")
+ --red_powerup = make_powerup(84,32,"red")
+ --green_cyclop = make_cyclop(24,64,"green")
+ --blue_cyclop = make_cyclop(34,64,"blue")
+ --red_cyclop = make_cyclop(44,64,"red")
+ --yellow_cyclop = make_cyclop(54,64,"yellow")
+ --ship.type = "player"
+ --ship.firerate = 5
+
 end
 
 function draw_stars()
- for i=1,num_stars do
-  star = game_stars[i]
+ for i=1,stars.number do
+  star = stars.game_stars[i]
   x = star[1]
   y = star[2]
   col = 4+star[3]
