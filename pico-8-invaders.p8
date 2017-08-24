@@ -28,7 +28,7 @@ function new_entity(x,y,tick,sprite_list,active,oneshot,move,height,width)
  return e
 end
 
-function entity_draw(entity)
+function draw_entities(entity)
  if (entity.active == 1) then
   spr(entity.sprite_list[entity.current],entity.x,entity.y)
  end
@@ -295,10 +295,27 @@ end
 
 function _init(  )
  cls()
- start_music(3-4) -- salvatore per la musica
- init_splash()
- init_game()
- init_game_stars()
+ -- game states
+ game = {}
+ game.states = {
+     splash = 0,
+     game = 1,
+     pause = 2,
+     gameover = 3
+ }
+ game.state = game.states.splash
+ game.score = 0
+ game.timer = 0
+ game.screen_size = 128
+ if game.state == game.states.splash then
+     init_splash()
+ elseif game.state == game.states.game then
+     init_game()
+ elseif game.state == game.states.pause then
+     init_pause()
+ elseif game.state == game.states.gameover then
+     init_gameover()
+ end
  -- colors
  colors={
   black=0,
@@ -318,17 +335,6 @@ function _init(  )
   darkpink=14,
   pink=15
  }
- -- debug
- ship = make_ship(64,100)
- green_powerup = make_powerup(64,32,"green")
- red_powerup = make_powerup(84,32,"red")
- green_cyclop = make_cyclop(24,64,"green")
- blue_cyclop = make_cyclop(34,64,"blue")
- red_cyclop = make_cyclop(44,64,"red")
- yellow_cyclop = make_cyclop(54,64,"yellow")
- --make_saucer(32,32)
- ship.type = "player"
- ship.firerate = 5
 end
 
 function init_splash()
@@ -364,18 +370,17 @@ function init_splash()
   add(starscrx,centerx)
   add(starscry,centery)
  end
- 
---create intro cyclop 
+
+ cls()
+
  -- red cyclop splash
- make_intro_cyclop(60,74,"red")
- 
+ make_intro_cyclop(40,74,"green")
+
  -- blue cyclop splash
- make_intro_cyclop(40,74,"red")
+ make_intro_cyclop(60,74,"blue")
 
  -- green cyclop splash
  make_intro_cyclop(80,74,"red")
- 
- cls()
 
 end
 
@@ -388,29 +393,29 @@ function init_game_stars()
 end
 
 function init_game()
- -- game states
- game = {}
- game.states = {
-     splash = 0,
-     game = 1,
-     pause = 2,
-     gameover = 3
- }
- game.state = game.states.splash
- game.score = 0
- game.timer = 0
- game.screen_size = 128
+ ship = make_ship(64,100)
+ green_powerup = make_powerup(64,32,"green")
+ red_powerup = make_powerup(84,32,"red")
+ green_cyclop = make_cyclop(24,64,"green")
+ blue_cyclop = make_cyclop(34,64,"blue")
+ red_cyclop = make_cyclop(44,64,"red")
+ yellow_cyclop = make_cyclop(54,64,"yellow")
+ ----make_saucer(32,32)
+ ship.type = "player"
+ ship.firerate = 5
 end
 
 -- splash
 
 function update_splash()
+ foreach(entities,update_entity_animation)
  update_timer()
 end
 
 function draw_splash()
  draw_splash_stars()
  draw_splash_logo()
+ foreach(entities,draw_entities)
  draw_splash_start_key()
  draw_splash_footer()
  if btn(4) then
@@ -424,16 +429,16 @@ function draw_splash_logo()
    x = cos(t0)*2 -- x for the animation
    y = 20 + cos(t1/30)*2 -- y pos for the logo + y of the animation
    spr(63+i, i*7.5 + x, y) -- sprite number,length,pos
- end 
+ end
 end
 
 function make_intro_cyclop(x,y,color)
  local sprite_list={}
- if color=="green" then
+ if color=="red" then
   add_to_sprite=0
  elseif color=="blue" then
   add_to_sprite=3
- elseif color=="red" then
+ elseif color=="green" then
   add_to_sprite=6
  end
  sprite_list[1] = (96 + add_to_sprite)
@@ -551,7 +556,7 @@ function draw_game()
  cls(0)
  draw_stars()
  draw_hud()
- foreach(entities,entity_draw)
+ foreach(entities,draw_entities)
  foreach(bullets, draw_bullet)
  -- debug
  --print(ship.firerate, 64, 64, 3)
