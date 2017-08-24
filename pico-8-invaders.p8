@@ -338,6 +338,8 @@ function _init(  )
 end
 
 function init_splash()
+ --music
+ start_music(3)
  --center of screen
  centerx=64  centery=80
  --star coordinates
@@ -360,7 +362,6 @@ function init_splash()
  -- camera movement
  a=0.0001
  b={7,5,7} -- colors
-
  -- init_splash_stars
  for x=1,stars do
   add(starx,rnd(256)-128)
@@ -370,7 +371,6 @@ function init_splash()
   add(starscrx,centerx)
   add(starscry,centery)
  end
-
  cls()
 
  -- red cyclop splash
@@ -384,15 +384,14 @@ function init_splash()
 
 end
 
-function init_game_stars()
+
+function init_game()
+ -- init game stars
  game_stars={}
  num_stars=10
  for i=1,num_stars do
   add(game_stars, {rnd(128), rnd(128), 1+rnd(3)})
  end
-end
-
-function init_game()
  ship = make_ship(64,100)
  green_powerup = make_powerup(64,32,"green")
  red_powerup = make_powerup(84,32,"red")
