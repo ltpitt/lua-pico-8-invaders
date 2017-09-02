@@ -6,16 +6,39 @@ __lua__
 cam_y = 0
 cam_x = 0
 
-
 function _update()
+
  if (cam_y > -376) then
   cam_y -= 1
  end
+ 
+ if btn(2) then
+  sprite_y-=1  
+ end
+ if btn(3) then
+  sprite_y+=1  
+ end
+ if btn(0) then
+  sprite_x-=1
+ end
+ if btn(1) then
+  sprite_x+=1
+ end
+
+
+ 
 end
+
+sprite_x=64
+sprite_y=64
 
 function _draw()
  cls(1)
- print("current cam_y: " .. cam_y,30,cam_y+64)
+ camera()
+ print("cam_y: " .. cam_y,15,10)
+ print("sprite_x: "..sprite_x,15,20)
+ print("sprite_y: "..sprite_y,15,30)
+ spr(4,sprite_x,sprite_y)
  camera(cam_x,cam_y)
  max_y_cells=128
  mapdraw(0, -16, 120, -510, 32, max_y_cells)
