@@ -38,13 +38,18 @@ function _draw()
  print("cam_y: " .. cam_y,15,10)
  print("sprite_x: "..sprite_x,15,20)
  print("sprite_y: "..sprite_y,15,30)
+ print(rnd(1),15,60)
  spr(4,sprite_x,sprite_y)
  camera(cam_x,cam_y)
  max_y_cells=128
  mapdraw(0, -16, 120, -510, 32, max_y_cells)
  mapdraw(0, -16, 0, -510, 32, max_y_cells)
  for border=0,128 do
-  mset(0,border,23)
+  if (rnd(1) < 0.1) then
+   mset(0,border,10)
+  else
+   mset(0,border,23)
+  end
   if cam_y <= -376 then
    cam_y = 0
   end
