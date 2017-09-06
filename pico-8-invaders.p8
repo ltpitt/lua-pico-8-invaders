@@ -68,16 +68,18 @@ end
 --- end of sprite code
 --
 
-function make_ship(x,y)
+function make_ship(game_state,x,y)
  local sprite_list = {}
  sprite_list[1] = 1
  sprite_list[2] = 1
- ship = new_entity("game",x,y,5,sprite_list, 1, 0, 1, 8, 6, 1)
+ ship = new_entity(game_state,x,y,5,sprite_list, 1, 0, 1, 8, 6, 1)
  ship.type = "player"
+ ship.green_powerup=0
+ ship.red_powerup=0
  return ship
 end
 
-function make_powerup(x,y,color)
+function make_powerup(game_state,x,y,color)
  local sprite_list = {}
  if color == "red" then
   sprite_list[1] = 16
@@ -93,7 +95,7 @@ function make_powerup(x,y,color)
   sprite_list[5] = 25
  end
  --cyclop=new_entity(x,y,5,sprite_list, 1, 0, 1, 8, 8, 1)
- powerup = new_entity(x,y,5,sprite_list, 1, 0, 1, 7, 7, 1)
+ powerup = new_entity(game_state,x,y,5,sprite_list, 1, 0, 1, 7, 7, 1)
  powerup.color = color
  powerup.type = "powerup"
  return powerup
@@ -114,7 +116,7 @@ function make_cyclop(game_state,x,y,color)
  sprite_list[2] = (33 + add_to_sprite)
  sprite_list[3] = (34 + add_to_sprite)
  sprite_list[4] = (35 + add_to_sprite)
- cyclop=new_entity(game.states.menu,x,y,5,sprite_list, 1, 0, 1, 8, 8, 1)
+ cyclop=new_entity(game_state,x,y,5,sprite_list, 1, 0, 1, 8, 8, 1)
  return cyclop
 end
 
@@ -153,7 +155,7 @@ end
 
 function fire_bullet()
  if (game.timer%ship.firerate==0) then
-  make_ship_shot (ship.x+2, ship.y-6)
+  make_ship_shot(ship.x, ship.y-7)
  end
 end
 
@@ -175,6 +177,8 @@ function is_ship_colliding(ship)
     kill_sprite(entities[i])
     --del(entities, ship)
    elseif entities[i].color == "red" then
+    ship.firerate=15
+    ship.red_powerup+=1
     kill_sprite(entities[i])
    end
   end
@@ -210,6 +214,13 @@ function animate_ship(animation)
 end
 
 function update_ship()
+ -- button 1
+ if btn(4) then
+ end
+ -- button 2
+ if btn(5) then
+   fire_bullet()
+ end
  -- left
  if btn(0) then
   animate_ship("left")
@@ -242,13 +253,6 @@ function update_ship()
        ship.y = 128 - ship.h
    end
  end
- -- button 1
- if btn(4) then
- end
- -- button 2
- if btn(5) then
-   fire_bullet()
- end
  -- if ship is not moving
  if not btn(0) and
   not btn(1) and
@@ -273,12 +277,12 @@ end
 
 function draw_hud()
  -- print score
- --print("score:" .. game.score, 0, 0, colors.grey)
- -- print debug
- print(text, 0, 0, colors.grey)
+ print("score:" .. game.score, 2, 4, colors.grey)
  -- print lives
- print("lives:", 70, 0, colors.grey)
- spr(0,100,0)
+ print("lives:", 74, 4, colors.grey)
+ spr(0,100,3)
+ -- print debug
+ print(debug_text, 2, 120, colors.grey)
 end
 
 function _update()
@@ -303,7 +307,8 @@ function _init(  )
   score = 0,
   timer = 0,
   screen_size = 128,
-  tick=1
+  tick=1,
+  initialized=false
  }
  game.states = {
   menu = 0,
@@ -314,7 +319,7 @@ function _init(  )
  game.state = game.states.menu
  entities={}
  bullets={}
- text="debug"
+ debug_text=game.initialized
  stars={}
  stars.number=76
  stars.game_stars={}
@@ -378,14 +383,26 @@ function _init(  )
   add(starscry,centery)
  end
  cls()
- -- red cyclop menu
+
  make_menu_cyclop(game.states.menu,40,74,"green")
-
- -- blue cyclop menu
  make_menu_cyclop(game.states.menu,60,74,"blue")
-
- -- green cyclop menu
  make_menu_cyclop(game.states.menu,80,74,"red")
+
+ -- init game
+ if game.initialized==false then
+  ship = make_ship(game.states.game,64,100)
+  green_powerup = make_powerup(game.states.game,64,32,"green")
+  red_powerup = make_powerup(game.states.game,84,32,"red")
+  green_cyclop = make_cyclop(game.states.game,24,64,"green")
+  blue_cyclop = make_cyclop(game.states.game,34,64,"blue")
+  red_cyclop = make_cyclop(game.states.game,44,64,"red")
+  yellow_cyclop = make_cyclop(game.states.game,54,64,"yellow")
+  ship.type = "player"
+  ship.firerate = 30
+  game.initialized=true
+ end
+
+
 end
 
 
@@ -430,13 +447,13 @@ function make_menu_cyclop(game_state,x,y,color)
  sprite_list[3] = (98 + add_to_sprite)
  sprite_list[4] = (99 + add_to_sprite)
  sprite_list[5] = (100 + add_to_sprite)
- cyclop=new_entity(game.states.menu,x,y,5,sprite_list, 1, 0, 1, 8, 8, 1)
+ cyclop=new_entity(game_state,x,y,5,sprite_list, 1, 0, 1, 8, 8, 1)
  return cyclop
 end
 
 
 function draw_menu_start_key()
-   print("press c key to start",24,90,7)
+   print("press c key to start",24,90,colors.red)
 end
 
 function draw_menu_footer()
@@ -518,18 +535,19 @@ end
 
 function update_game()
  update_timer()
- update_stars()
+ update_game_stars()
  foreach(entities,update_entity_animation)
  foreach(bullets, update_bullet)
- --are_bullets_colliding()
- --is_ship_colliding(ship)
- --update_ship()
+ are_bullets_colliding()
+ is_ship_colliding(ship)
+ update_ship()
 end
 
-function update_stars()
+function update_game_stars()
  for i=1,stars.number do
   y = stars.game_stars[i][2]
-  y += stars.game_stars[i][3]
+  random_speed = stars.game_stars[i][3]
+  y += random_speed
   if y > 128 then
    y = y - 128
    stars.game_stars[i][1] = rnd(127)
@@ -539,31 +557,20 @@ function update_stars()
 end
 
 function draw_game()
- cls(0)
- draw_stars()
+ cls()
+ stars.number=10
+ draw_game_stars()
  draw_hud()
  foreach(entities,draw_entities)
  foreach(bullets, draw_bullet)
+ if ship.red_powerup==0 then
+  spr(10,ship.x,ship.y)
+ end
  -- debug
  --print(ship.firerate, 64, 64, 3)
-
- -- init game stars
-
-
- -- init game
- --ship = make_ship(64,100)
- --green_powerup = make_powerup(64,32,"green")
- --red_powerup = make_powerup(84,32,"red")
- --green_cyclop = make_cyclop(24,64,"green")
- --blue_cyclop = make_cyclop(34,64,"blue")
- --red_cyclop = make_cyclop(44,64,"red")
- --yellow_cyclop = make_cyclop(54,64,"yellow")
- --ship.type = "player"
- --ship.firerate = 5
-
 end
 
-function draw_stars()
+function draw_game_stars()
  for i=1,stars.number do
   star = stars.game_stars[i]
   x = star[1]
