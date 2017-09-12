@@ -59,11 +59,10 @@ function update_timer()
  end
 end
 
--- misato
-function entity:collide(other_entity)
- return other_entity.x < self.x + self.w and self.x < other_entity.x + other_entity.w
- and other_entity.y < self.y + self.h and self.y < other_entity.y + other_entity.h
-end
+--function entity:collide(other_entity)
+-- return other_entity.x < self.x + self.w and self.x < other_entity.x + other_entity.w
+-- and other_entity.y < self.y + self.h and self.y < other_entity.y + other_entity.h
+--end
 
 function are_colliding(entity_a,entity_b) -- are entities hitting each others boundary and not the same type?
  return entity_b.x < entity_a.x + entity_a.w and entity_a.x < entity_b.x + entity_b.w
@@ -547,8 +546,6 @@ function update_game()
  are_bullets_colliding()
  is_ship_colliding(ship)
  update_ship()
- -- misato
- ship.collide(ship)
 end
 
 function update_game_stars()
