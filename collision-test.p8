@@ -41,17 +41,21 @@ function _update()
 end
 
 function are_rectangles_colliding(entity_a,entity_b)
- return entity_b.x <= entity_a.x + entity_a.w and
-        entity_a.x <= entity_b.x + entity_b.w + 1 and
-        entity_b.y <= entity_a.y + entity_a.h and
-        entity_a.y <= entity_b.y + entity_b.h + 1
+ return entity_b.x <= entity_a.x + entity_a.w + 1 and
+        entity_a.x <= entity_b.x + entity_b.w + 2 and
+        entity_b.y <= entity_a.y + entity_a.h + 1 and
+        entity_a.y <= entity_b.y + entity_b.h + 2
 end
 
 function are_circle_and_rectangle_colliding(circle,rectangle)
- return circle.x - circle.s <= rectangle.x + rectangle.w + 1 and
-             rectangle.x <= circle.x + circle.s and
-             circle.y - circle.s  <= rectangle.y + rectangle.h + 1 and
-             rectangle.y <= circle.y + circle.s
+         -- right   
+ return circle.x - circle.s <= rectangle.x + rectangle.w + 2 and
+            -- left
+             rectangle.x <= circle.x + circle.s + 1 and
+            -- bottom
+             circle.y - circle.s - 2  <= rectangle.y + rectangle.h and 
+            -- top
+             rectangle.y <= circle.y + circle.s +1
 end
 
 function _draw()
