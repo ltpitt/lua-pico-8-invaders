@@ -5,9 +5,13 @@ __lua__
 -- initialize camera coordinates to the upper left corner of the camera
 cam_y = 0
 cam_x = 0
+enemy_y = -200
+
+function _init()
+end
 
 function _update()
-
+ enemy_y += 1
  if (cam_y > -376) then
   cam_y -= 1
  end
@@ -44,16 +48,15 @@ function _draw()
  max_y_cells=128
  mapdraw(0, -16, 120, -510, 32, max_y_cells)
  mapdraw(0, -16, 0, -510, 32, max_y_cells)
+ mset(0,25,10)
  for border=0,128 do
-  if (rnd(1) < 0.1) then
-   mset(0,border,10)
-  else
-   mset(0,border,23)
-  end
+  mset(0,border,23)
   if cam_y <= -376 then
    cam_y = 0
   end
  end
+ mset(0,25,10)
+ spr(0,120,enemy_y)
 end
 
 __gfx__
