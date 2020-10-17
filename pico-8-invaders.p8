@@ -69,6 +69,24 @@ function are_colliding(entity_a,entity_b) -- are entities hitting each others bo
  and entity_b.y < entity_a.y + entity_a.h and entity_a.y < entity_b.y + entity_b.h
 end
 
+-- works with x,y up to +/-8191
+-- and distance up to 11584 by
+-- sacrificing some precision
+function distance(x0,y0,x1,y1)
+  -- scale inputs down by 6 bits
+  local dx=(x0-x1)/64
+  local dy=(y0-y1)/64
+
+  -- get distance squared
+  local dsq=dx*dx+dy*dy
+
+  -- in case of overflow/wrap
+  if(dsq<0) return 32767.99999
+
+  -- scale output back up by 6 bits
+  return sqrt(dsq)*64
+end
+
 --
 --- end of sprite code
 --
@@ -81,6 +99,7 @@ function make_ship(game_state,x,y)
  ship.type = "player"
  ship.green_powerup=0
  ship.red_powerup=0
+ ship.speed = 1
  return ship
 end
 
@@ -159,9 +178,7 @@ function update_bullet(bullet)
 end
 
 function fire_bullet()
- if (game.timer%ship.firerate==0) then
-  make_ship_shot(ship.x, ship.y-7)
- end
+    make_ship_shot(ship.x, ship.y-7)
 end
 
 function did_bullet_collide(bullet)
@@ -179,6 +196,8 @@ function is_ship_colliding(ship)
  for i=2,#entities do
   if (are_colliding(ship, entities[i])) then
    if entities[i].color == "green" then
+    ship.speed=2
+    ship.green_powerup+=1
     kill_sprite(entities[i])
     --del(entities, ship)
    elseif entities[i].color == "red" then
@@ -229,7 +248,7 @@ function update_ship()
  -- left
  if btn(0) then
   animate_ship("left")
-  ship.x -= 1
+  ship.x -= ship.speed
   if ship.x < 0 then
       ship.x = 0
   end
@@ -237,7 +256,7 @@ function update_ship()
  -- right
  if btn(1) then
   animate_ship("right")
-  ship.x += 1
+  ship.x += ship.speed
   if ship.x + ship.w > 128 then
       ship.x = 128 - ship.w
   end
@@ -245,7 +264,7 @@ function update_ship()
  -- up
  if btn(2) then
   animate_ship("up")
-  ship.y -= 1
+  ship.y -= ship.speed
   if ship.y < 10 then
       ship.y = 10
   end
@@ -253,7 +272,7 @@ function update_ship()
  -- down
  if btn(3) then
   animate_ship("down")
-  ship.y += 1
+  ship.y += ship.speed
    if ship.y + ship.h > 128 then
        ship.y = 128 - ship.h
    end
