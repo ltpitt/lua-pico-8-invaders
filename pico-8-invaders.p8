@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 18
+version 8
 __lua__
 
 
@@ -70,24 +70,6 @@ end
 function are_colliding(entity_a,entity_b) -- are entities hitting each others boundary and not the same type?
  return entity_b.x < entity_a.x + entity_a.w and entity_a.x < entity_b.x + entity_b.w
  and entity_b.y < entity_a.y + entity_a.h and entity_a.y < entity_b.y + entity_b.h
-end
-
--- works with x,y up to +/-8191
--- and distance up to 11584 by
--- sacrificing some precision
-function distance(x0,y0,x1,y1)
-  -- scale inputs down by 6 bits
-  local dx=(x0-x1)/64
-  local dy=(y0-y1)/64
-
-  -- get distance squared
-  local dsq=dx*dx+dy*dy
-
-  -- in case of overflow/wrap
-  if(dsq<0) return 32767.99999
-
-  -- scale output back up by 6 bits
-  return sqrt(dsq)*64
 end
 
 --
@@ -183,7 +165,7 @@ end
 function fire_bullet()
     if (game.gun_timer==0) then
         make_ship_shot(ship.x, ship.y-7)
-								game.gun_timer = ship.firerate        
+								game.gun_timer = ship.firerate
     end
 end
 
