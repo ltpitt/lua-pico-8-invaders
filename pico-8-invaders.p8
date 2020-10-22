@@ -62,14 +62,12 @@ function update_timer()
  end
 end
 
---function entity:collide(other_entity)
--- return other_entity.x < self.x + self.w and self.x < other_entity.x + other_entity.w
--- and other_entity.y < self.y + self.h and self.y < other_entity.y + other_entity.h
---end
-
-function are_colliding(entity_a,entity_b) -- are entities hitting each others boundary and not the same type?
+function are_colliding(entity_a,entity_b)
+ if entity_a == nil or entity_b == nil then
+  return false
+ end
  return entity_b.x < entity_a.x + entity_a.w and entity_a.x < entity_b.x + entity_b.w
- and entity_b.y < entity_a.y + entity_a.h and entity_a.y < entity_b.y + entity_b.h
+  and entity_b.y < entity_a.y + entity_a.h and entity_a.y < entity_b.y + entity_b.h
 end
 
 --
@@ -103,7 +101,6 @@ function make_powerup(game_state,x,y,color)
   sprite_list[4] = 24
   sprite_list[5] = 25
  end
- --cyclop=new_entity(x,y,5,sprite_list, 1, 0, 1, 8, 8, 1)
  powerup = new_entity(game_state,x,y,5,sprite_list, 1, 0, 1, 7, 7, 1)
  powerup.color = color
  powerup.type = "powerup"
@@ -126,17 +123,8 @@ function make_cyclop(game_state,x,y,color)
  sprite_list[3] = (34 + add_to_sprite)
  sprite_list[4] = (35 + add_to_sprite)
  cyclop=new_entity(game_state,x,y,5,sprite_list, 1, 0, 1, 8, 8, 1)
+ cyclop.type = "enemy"
  return cyclop
-end
-
-function make_explosion(x,y)
- local sprite_list = {}
- sprite_list[1] = 53
- sprite_list[2] = 54
- sprite_list[3] = 55
- sprite_list[4] = 56
- sprite_list[5] = 57
- new_entity(x,y,5,sprite_list, 1, 1, 1, 8, 8, 1)
 end
 
 function make_ship_shot(x,y)
@@ -159,21 +147,33 @@ end
 function update_bullet(bullet)
  bullet.x += bullet.dx
  bullet.y += bullet.dy
- if ((bullet.x <0 or bullet.x > 128) or (bullet.y <0 or bullet.y > 128)) then del(bullets, bullet) end
+ if ((bullet.x < 0 or bullet.x > 128) or (bullet.y < 0 or bullet.y > 128)) then del(bullets, bullet) end
+ did_bullet_collide(bullet)
 end
 
 function fire_bullet()
-    if (game.gun_timer==0) then
-        make_ship_shot(ship.x, ship.y-7)
-								game.gun_timer = ship.firerate
-    end
+ if (game.gun_timer==0 or #bullets==0) then
+  if (ship.red_powerup > 2) then
+   make_ship_shot(ship.x+5, ship.y-7)
+  end
+  make_ship_shot(ship.x, ship.y-7)
+ 	game.gun_timer = ship.firerate
+ end
 end
 
 function did_bullet_collide(bullet)
- for i=1,#entities do
+ for i=0,#bullets do
+  if (are_colliding(bullet, bullets[i])) then
+    if bullet != bullets[i] then
+      del(bullets, bullet)
+    end
+  end
+ end
+ for i=2,#entities do
   if (are_colliding(bullet, entities[i])) then
-    if entities[i].type != "powerup" then
-     kill_sprite(entities[i])
+    if entities[i].type == "enemy" then
+     add_exp(bullet.x, bullet.y)
+     del(entities, entities[i])
      del(bullets, bullet)
     end
   end
@@ -184,26 +184,18 @@ function is_ship_colliding(ship)
  for i=2,#entities do
   if (are_colliding(ship, entities[i])) then
    if entities[i].color == "green" then
-    ship.speed=2
+    ship.speed+=0.2
     ship.green_powerup+=1
-    kill_sprite(entities[i])
-    --del(entities, ship)
+    del(entities, entities[i])
    elseif entities[i].color == "red" then
-    ship.firerate=10
+    ship.firerate-=7
     ship.red_powerup+=1
-    kill_sprite(entities[i])
+    del(entities, entities[i])
+   elseif entities[i].type == "enemy" then
+    del(entities, ship)
    end
   end
  end
-end
-
-function are_bullets_colliding()
- foreach(bullets, did_bullet_collide)
-end
-
-function kill_sprite(sprite)
- make_explosion(sprite.x, sprite.y)
- del(entities, sprite)
 end
 
 function animate_ship(animation)
@@ -294,7 +286,7 @@ function draw_hud()
  print("lives:", 74, 4, colors.grey)
  spr(0,100,3)
  -- print debug
- print(debug_text, 2, 120, colors.grey)
+ -- print(debug_text, 2, 120, colors.grey)
 end
 
 function _update()
@@ -310,11 +302,6 @@ function _update()
 end
 
 function _init(  )
- cls()
- --
- -- general game init
- --
-
  game = {
   score = 0,
   timer = 0,
@@ -397,24 +384,9 @@ function _init(  )
  end
  cls()
 
- make_menu_cyclop(game.states.menu,40,74,"green")
- make_menu_cyclop(game.states.menu,60,74,"blue")
- make_menu_cyclop(game.states.menu,80,74,"red")
-
- -- init game
- if game.initialized==false then
-  ship = make_ship(game.states.game,64,100)
-  green_powerup = make_powerup(game.states.game,64,32,"green")
-  red_powerup = make_powerup(game.states.game,84,32,"red")
-  green_cyclop = make_cyclop(game.states.game,24,64,"green")
-  blue_cyclop = make_cyclop(game.states.game,34,64,"blue")
-  red_cyclop = make_cyclop(game.states.game,44,64,"red")
-  yellow_cyclop = make_cyclop(game.states.game,54,64,"yellow")
-  ship.type = "player"
-  ship.firerate = 20
-  game.initialized=true
- end
-
+ cyclop_menu_1 = make_menu_cyclop(game.states.menu,40,74,"green")
+ cyclop_menu_2 = make_menu_cyclop(game.states.menu,60,74,"blue")
+ cyclop_menu_3 = make_menu_cyclop(game.states.menu,80,74,"red")
 
 end
 
@@ -425,14 +397,43 @@ function update_menu()
  update_timer()
 end
 
+
+
 function draw_menu()
  draw_menu_stars()
  draw_menu_logo()
  foreach(entities,draw_entities)
  draw_menu_start_key()
  draw_menu_footer()
- if btn(4) then
+ 
+ if btn(5) then
+  for i=0,#entities do
+   del(entities, entities[i])
+  end
+
+  -- init game
+  if game.initialized==false then
+   ship = make_ship(game.states.game,64,100)
+   make_powerup(game.states.game,04,32,"green")
+   make_powerup(game.states.game,24,32,"green")
+   make_powerup(game.states.game,44,32,"green")
+   make_powerup(game.states.game,64,32,"red")
+   make_powerup(game.states.game,84,32,"red")
+   make_powerup(game.states.game,104,32,"red")
+   make_cyclop(game.states.game,24,64,"green")
+   make_cyclop(game.states.game,34,64,"blue")
+   make_cyclop(game.states.game,44,64,"red")
+   make_cyclop(game.states.game,54,64,"yellow")
+   ship.type = "player"
+   ship.firerate = 30
+   game.initialized=true
+  end
+
+  stop_music()
+  start_music(1)
+
   game.state = game.states.game
+
  end
 
 end
@@ -461,18 +462,91 @@ function make_menu_cyclop(game_state,x,y,color)
  sprite_list[4] = (99 + add_to_sprite)
  sprite_list[5] = (100 + add_to_sprite)
  cyclop=new_entity(game_state,x,y,5,sprite_list, 1, 0, 1, 8, 8, 1)
+ cyclop.type="enemy"
  return cyclop
 end
 
 
 function draw_menu_start_key()
-   print("press c key to start",24,90,colors.red)
+   print("press x key to start",24,90,colors.red)
 end
 
 function draw_menu_footer()
    color = (flr(rnd(19)))
    print("a production amazing software",8,120,color)
 end
+
+-- explosions
+
+ex_emitters={}
+
+
+function add_exp(x,y)
+    local e={
+        parts={},
+        x=x,
+        y=y,
+        offset={x=cos(rnd())*2
+                                    ,y=sin(rnd())*2
+        },
+        age=0,
+        maxage=25
+    }
+    for i=0,5 do
+        add_exp_part(e)
+    end
+    add(ex_emitters,e)
+end
+function add_exp_part(e)
+        local p={
+            x=e.x+(cos(rnd())*5),
+            y=e.y+(sin(rnd())*5),
+            rad=0,
+            age=0,
+            maxage=5+rnd(10),
+            c=rnd({15,8,9,10})
+        }
+        add(e.parts,p)
+end
+function update_explosions()
+    for i=#ex_emitters,1,-1 do
+        local e=ex_emitters[i]
+        add_exp_part(e)
+        for ip=#e.parts,1,-1 do
+            local p=e.parts[ip]
+            p.rad+=1
+            p.age+=1
+            if p.age+5>p.maxage then
+                p.c=5
+            end
+            if p.age>p.maxage then
+                del(e.parts,p)
+            end       
+        end
+        e.age+=1
+        if e.age>e.maxage then
+            del(ex_emitters,e)
+        end
+    end
+end
+
+function draw_explosions()
+    for e in all(ex_emitters) do
+        for p in all(e.parts) do
+            circfill(p.x,p.y,p.rad,p.c)
+            circfill(p.x+e.offset.x
+                                            ,p.y+e.offset.y
+                                            ,p.rad-3,0)                                       
+            circ(p.x+(cos(rnd())*5)
+                            ,p.y+(sin(rnd())*5)
+                                            ,1,0)                                                       
+        end
+    end
+end
+
+-- end explosions
+
+
 
 function draw_menu_stars()
 
@@ -551,9 +625,9 @@ function update_game()
  update_game_stars()
  foreach(entities,update_entity_animation)
  foreach(bullets, update_bullet)
- are_bullets_colliding()
  is_ship_colliding(ship)
  update_ship()
+ update_explosions()
 end
 
 function update_game_stars()
@@ -576,9 +650,11 @@ function draw_game()
  draw_hud()
  foreach(entities,draw_entities)
  foreach(bullets, draw_bullet)
- if ship.red_powerup==0 then
-  spr(10,ship.x,ship.y)
+ -- draw broken laser cannon on ship
+ if ship.red_powerup<3 then
+   spr(colors.yellow,ship.x,ship.y) 
  end
+ draw_explosions()
  -- debug
  --print(ship.firerate, 64, 64, 3)
 end
