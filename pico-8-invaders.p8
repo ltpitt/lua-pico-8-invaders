@@ -2,7 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 18
 __lua__
 
-
+angle = 0
 --
 --- sprite code
 --
@@ -69,6 +69,15 @@ function are_colliding(entity_a,entity_b)
  return entity_b.x < entity_a.x + entity_a.w and entity_a.x < entity_b.x + entity_b.w
   and entity_b.y < entity_a.y + entity_a.h and entity_a.y < entity_b.y + entity_b.h
 end
+
+angle=0
+
+function sine_pattern(coordinate)
+ coordinate+=sin(angle)*3
+ angle+=3.03
+ return coordinate
+end
+
 
 --
 --- end of sprite code
@@ -151,13 +160,25 @@ function update_bullet(bullet)
  did_bullet_collide(bullet)
 end
 
+function update_enemy_position(entity)
+ if (entity.type=="enemy") then
+   if game.timer % 15 == 0 then
+    entity.y += 0.5 * 1.1
+    entity.x = sine_pattern(entity.x)
+   end
+ end
+ if entity.y > 128 then
+  entity.y = 0
+ end
+end
+
 function fire_bullet()
  if (game.gun_timer==0 or #bullets==0) then
   if (ship.red_powerup > 2) then
    make_ship_shot(ship.x+5, ship.y-7)
   end
   make_ship_shot(ship.x, ship.y-7)
- 	game.gun_timer = ship.firerate
+  game.gun_timer = ship.firerate
  end
 end
 
@@ -421,9 +442,9 @@ function draw_menu()
    make_powerup(game.states.game,84,32,"red")
    make_powerup(game.states.game,104,32,"red")
    make_cyclop(game.states.game,24,64,"green")
-   make_cyclop(game.states.game,34,64,"blue")
-   make_cyclop(game.states.game,44,64,"red")
-   make_cyclop(game.states.game,54,64,"yellow")
+   make_cyclop(game.states.game,54,64,"blue")
+   make_cyclop(game.states.game,84,64,"red")
+   make_cyclop(game.states.game,114,64,"yellow")
    ship.type = "player"
    ship.firerate = 30
    game.initialized=true
@@ -625,6 +646,7 @@ function update_game()
  update_game_stars()
  foreach(entities,update_entity_animation)
  foreach(bullets, update_bullet)
+ foreach(entities,update_enemy_position)
  is_ship_colliding(ship)
  update_ship()
  update_explosions()
