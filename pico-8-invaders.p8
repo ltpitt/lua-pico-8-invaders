@@ -173,12 +173,14 @@ function update_enemy_position(entity)
 end
 
 function fire_bullet()
- if (game.gun_timer==0 or #bullets==0) then
-  if (ship.red_powerup > 2) then
-   make_ship_shot(ship.x+5, ship.y-7)
+ if not ship.exploded then
+  if (game.gun_timer==0 or #bullets==0) then
+   if (ship.red_powerup > 2) then
+    make_ship_shot(ship.x+5, ship.y-7)
+   end
+   make_ship_shot(ship.x, ship.y-7)
+   game.gun_timer = ship.firerate
   end
-  make_ship_shot(ship.x, ship.y-7)
-  game.gun_timer = ship.firerate
  end
 end
 
@@ -213,7 +215,11 @@ function is_ship_colliding(ship)
     ship.red_powerup+=1
     del(entities, entities[i])
    elseif entities[i].type == "enemy" then
-    del(entities, ship)
+    if not ship.exploded then
+     ship.exploded = true
+     del(entities, ship)
+     add_exp(ship.x, ship.y)
+    end
    end
   end
  end
@@ -447,6 +453,7 @@ function draw_menu()
    make_cyclop(game.states.game,114,64,"yellow")
    ship.type = "player"
    ship.firerate = 30
+   ship.exploded = false
    game.initialized=true
   end
 
@@ -673,7 +680,7 @@ function draw_game()
  foreach(entities,draw_entities)
  foreach(bullets, draw_bullet)
  -- draw broken laser cannon on ship
- if ship.red_powerup<3 then
+ if ship.red_powerup<3 and not ship.exploded then
    spr(colors.yellow,ship.x,ship.y) 
  end
  draw_explosions()
