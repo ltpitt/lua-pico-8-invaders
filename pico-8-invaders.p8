@@ -217,6 +217,11 @@ function is_ship_colliding(ship)
    elseif entities[i].type == "enemy" then
     if not ship.exploded then
      ship.exploded = true
+     if ship.lives > 0 then
+      ship.lives -= 1
+     else
+      -- gameover
+     end
      del(entities, ship)
      add_exp(ship.x, ship.y)
     end
@@ -311,7 +316,18 @@ function draw_hud()
  print("score:" .. game.score, 2, 4, colors.grey)
  -- print lives
  print("lives:", 74, 4, colors.grey)
- spr(0,100,3)
+ if ship.lives == 1 then
+  spr(0,100,3)
+ end  
+ if ship.lives == 2 then
+  spr(0,100,3)
+  spr(0,110,3)
+ end  
+ if ship.lives == 3 then
+  spr(0,100,3)
+  spr(0,110,3)
+  spr(0,120,3)  
+ end
  -- print debug
  -- print(debug_text, 2, 120, colors.grey)
 end
@@ -455,6 +471,7 @@ function draw_menu()
    ship.firerate = 30
    ship.exploded = false
    game.initialized=true
+   ship.lives = 3
   end
 
   stop_music()
