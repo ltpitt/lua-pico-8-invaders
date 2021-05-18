@@ -92,6 +92,7 @@ function make_ship(game_state,x,y)
  ship.green_powerup=0
  ship.red_powerup=0
  ship.speed = 1
+ ship.w = 8
  return ship
 end
 
@@ -133,6 +134,7 @@ function make_cyclop(game_state,x,y,color)
  sprite_list[4] = (35 + add_to_sprite)
  cyclop=new_entity(game_state,x,y,5,sprite_list, 1, 0, 1, 8, 8, 1)
  cyclop.type = "enemy"
+ cyclop.points = 100
  return cyclop
 end
 
@@ -195,6 +197,7 @@ function did_bullet_collide(bullet)
  for i=2,#entities do
   if (are_colliding(bullet, entities[i])) then
     if entities[i].type == "enemy" then
+     game.score+=entities[i].points
      add_exp(bullet.x, bullet.y)
      del(entities, entities[i])
      del(bullets, bullet)
@@ -269,6 +272,7 @@ function update_ship()
  if btn(1) then
   animate_ship("right")
   ship.x += ship.speed
+  -- davide
   if ship.x + ship.w > 128 then
       ship.x = 128 - ship.w
   end
@@ -513,7 +517,7 @@ end
 
 
 function draw_menu_start_key()
-   print("press x key to start",24,90,colors.red)
+   print("press ❎ key to start",24,90,colors.red)
 end
 
 function draw_menu_footer()
@@ -579,12 +583,8 @@ function draw_explosions()
     for e in all(ex_emitters) do
         for p in all(e.parts) do
             circfill(p.x,p.y,p.rad,p.c)
-            circfill(p.x+e.offset.x
-                                            ,p.y+e.offset.y
-                                            ,p.rad-3,0)                                       
-            circ(p.x+(cos(rnd())*5)
-                            ,p.y+(sin(rnd())*5)
-                                            ,1,0)                                                       
+            circfill(p.x+e.offset.x,p.y+e.offset.y,p.rad-3,0)                                       
+            circ(p.x+(cos(rnd())*5),p.y+(sin(rnd())*5),1,0)                                                       
         end
     end
 end
@@ -668,9 +668,9 @@ end
 function update_game()
  update_timer()
  update_game_stars()
- foreach(entities,update_entity_animation)
+ foreach(entities, update_entity_animation)
  foreach(bullets, update_bullet)
- foreach(entities,update_enemy_position)
+ foreach(entities, update_enemy_position)
  is_ship_colliding(ship)
  update_ship()
  update_explosions()
