@@ -93,6 +93,9 @@ function make_ship(game_state,x,y)
  ship.red_powerup=0
  ship.speed = 1
  ship.w = 8
+ ship.firerate = 30
+ ship.exploded = false
+ ship.lives = 3 
  return ship
 end
 
@@ -225,8 +228,9 @@ function is_ship_colliding(ship)
      else
       -- gameover
      end
-     del(entities, ship)
+     --del(entities, ship)
      add_exp(ship.x, ship.y)
+     break
     end
    end
   end
@@ -272,7 +276,6 @@ function update_ship()
  if btn(1) then
   animate_ship("right")
   ship.x += ship.speed
-  -- davide
   if ship.x + ship.w > 128 then
       ship.x = 128 - ship.w
   end
@@ -300,6 +303,16 @@ function update_ship()
   not btn(3) then
   animate_ship("stop")
  end
+
+ if ship.exploded == true then
+  if ship.lives == 0 then
+   game.state = game.states.gameover
+  end
+  ship.x = 64
+  ship.y = 100
+  ship.exploded = false
+ end
+
 end
 
 function _draw()
@@ -471,11 +484,7 @@ function draw_menu()
    make_cyclop(game.states.game,54,64,"blue")
    make_cyclop(game.states.game,84,64,"red")
    make_cyclop(game.states.game,114,64,"yellow")
-   ship.type = "player"
-   ship.firerate = 30
-   ship.exploded = false
    game.initialized=true
-   ship.lives = 3
   end
 
   stop_music()
