@@ -74,7 +74,7 @@ angle=0
 
 function sine_pattern(coordinate)
  coordinate+=sin(angle)*3
- angle+=3.03
+ angle+=5.03
  return coordinate
 end
 
@@ -138,6 +138,7 @@ function make_cyclop(game_state,x,y,color)
  cyclop=new_entity(game_state,x,y,5,sprite_list, 1, 0, 1, 8, 8, 1)
  cyclop.type = "enemy"
  cyclop.points = 100
+ cyclop.direction = "right"
  return cyclop
 end
 
@@ -167,13 +168,35 @@ end
 
 function update_enemy_position(entity)
  if (entity.type=="enemy") then
-   if game.timer % 15 == 0 then
-    entity.y += 0.5 * 1.1
-    entity.x = sine_pattern(entity.x)
+  if game.timer % 15 == 0 then
+   if entity.x > 120 or entity.x < 0 then
+    foreach(entities, invert_entity_direction)
    end
+   if entity.direction == "right" then
+    entity.x += 0.5 * 1.1
+   else
+    entity.x -= 0.5 * 1.1
+   end
+  end
  end
- if entity.y > 128 then
-  entity.y = 0
+ -- if (entity.type=="enemy") then
+ --   if game.timer % 15 == 0 then
+ --    entity.y += 0.5 * 1.1
+ --    entity.x = sine_pattern(entity.x)
+ --   end
+ -- end
+ -- if entity.y > 128 then
+ --  entity.y = 0
+ -- end
+end
+
+function invert_entity_direction(entity)
+ if (entity.type=="enemy") then
+  if entity.direction == "right" then
+   entity.direction = "left"
+  else
+   entity.direction = "right"
+  end
  end
 end
 
@@ -474,16 +497,24 @@ function draw_menu()
   -- init game
   if game.initialized==false then
    ship = make_ship(game.states.game,64,100)
-   make_powerup(game.states.game,04,32,"green")
-   make_powerup(game.states.game,24,32,"green")
-   make_powerup(game.states.game,44,32,"green")
-   make_powerup(game.states.game,64,32,"red")
-   make_powerup(game.states.game,84,32,"red")
-   make_powerup(game.states.game,104,32,"red")
-   make_cyclop(game.states.game,24,64,"green")
-   make_cyclop(game.states.game,54,64,"blue")
-   make_cyclop(game.states.game,84,64,"red")
-   make_cyclop(game.states.game,114,64,"yellow")
+   make_cyclop(game.states.game,04,12,"red")
+   make_cyclop(game.states.game,24,12,"red")
+   make_cyclop(game.states.game,44,12,"red")
+   make_cyclop(game.states.game,64,12,"red")
+   make_cyclop(game.states.game,84,12,"red")
+   make_cyclop(game.states.game,104,12,"red")
+   make_cyclop(game.states.game,04,24,"green")
+   make_cyclop(game.states.game,24,24,"green")
+   make_cyclop(game.states.game,44,24,"green")
+   make_cyclop(game.states.game,64,24,"green")
+   make_cyclop(game.states.game,84,24,"green")
+   make_cyclop(game.states.game,104,24,"green")
+   make_cyclop(game.states.game,04,36,"yellow")
+   make_cyclop(game.states.game,24,36,"yellow")
+   make_cyclop(game.states.game,44,36,"yellow")
+   make_cyclop(game.states.game,64,36,"yellow")
+   make_cyclop(game.states.game,84,36,"yellow")
+   make_cyclop(game.states.game,104,36,"yellow")
    game.initialized=true
   end
 
