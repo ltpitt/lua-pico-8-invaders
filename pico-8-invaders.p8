@@ -136,7 +136,7 @@ function make_cyclop(game_state,x,y,color)
  sprite_list[3] = (34 + add_to_sprite)
  sprite_list[4] = (35 + add_to_sprite)
  cyclop=new_entity(game_state,x,y,5,sprite_list, 1, 0, 1, 8, 8, 1)
- cyclop.type = "enemy"
+ cyclop.type = "immigrant"
  cyclop.points = 100
  cyclop.direction = "right"
  return cyclop
@@ -166,11 +166,14 @@ function update_bullet(bullet)
  did_bullet_collide(bullet)
 end
 
-function update_enemy_position(entity)
- if (entity.type=="enemy") then
+function update_immigrant_position(entity)
+ if (entity.type=="immigrant") then
   if game.timer % 15 == 0 then
-   if entity.x > 120 or entity.x < 0 then
-    foreach(entities, invert_entity_direction)
+   if entity.x > 120 then
+    change_immigrants_direction("left")
+   end
+   if entity.x < 1 then
+    change_immigrants_direction("right")
    end
    if entity.direction == "right" then
     entity.x += 0.5 * 1.1
@@ -179,23 +182,12 @@ function update_enemy_position(entity)
    end
   end
  end
- -- if (entity.type=="enemy") then
- --   if game.timer % 15 == 0 then
- --    entity.y += 0.5 * 1.1
- --    entity.x = sine_pattern(entity.x)
- --   end
- -- end
- -- if entity.y > 128 then
- --  entity.y = 0
- -- end
 end
 
-function invert_entity_direction(entity)
- if (entity.type=="enemy") then
-  if entity.direction == "right" then
-   entity.direction = "left"
-  else
-   entity.direction = "right"
+function change_immigrants_direction(direction)
+ for entity in all(entities) do
+  if (entity.type=="immigrant") then
+    entity.direction = direction
   end
  end
 end
@@ -222,7 +214,7 @@ function did_bullet_collide(bullet)
  end
  for i=2,#entities do
   if (are_colliding(bullet, entities[i])) then
-    if entities[i].type == "enemy" then
+    if entities[i].type == "immigrant" then
      game.score+=entities[i].points
      add_exp(bullet.x, bullet.y)
      del(entities, entities[i])
@@ -243,7 +235,7 @@ function is_ship_colliding(ship)
     ship.firerate-=7
     ship.red_powerup+=1
     del(entities, entities[i])
-   elseif entities[i].type == "enemy" then
+   elseif entities[i].type == "immigrant" then
     if not ship.exploded then
      ship.exploded = true
      if ship.lives > 0 then
@@ -551,7 +543,7 @@ function make_menu_cyclop(game_state,x,y,color)
  sprite_list[4] = (99 + add_to_sprite)
  sprite_list[5] = (100 + add_to_sprite)
  cyclop=new_entity(game_state,x,y,5,sprite_list, 1, 0, 1, 8, 8, 1)
- cyclop.type="enemy"
+ cyclop.type="immigrant"
  return cyclop
 end
 
@@ -710,7 +702,7 @@ function update_game()
  update_game_stars()
  foreach(entities, update_entity_animation)
  foreach(bullets, update_bullet)
- foreach(entities, update_enemy_position)
+ foreach(entities, update_immigrant_position)
  is_ship_colliding(ship)
  update_ship()
  update_explosions()
