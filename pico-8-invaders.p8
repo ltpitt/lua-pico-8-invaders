@@ -238,6 +238,7 @@ function is_ship_colliding(ship)
    elseif entities[i].type == "immigrant" then
     if not ship.exploded then
      ship.exploded = true
+     del(entities, entities[i])
      if ship.lives > 0 then
       ship.lives -= 1
      else
