@@ -241,10 +241,7 @@ function is_ship_colliding(ship)
      del(entities, entities[i])
      if ship.lives > 0 then
       ship.lives -= 1
-     else
-      -- gameover
      end
-     --del(entities, ship)
      add_exp(ship.x, ship.y)
      break
     end
@@ -395,7 +392,7 @@ function _init(  )
  game.state = game.states.menu
  entities={}
  bullets={}
- debug_text=game.initialized
+ debug_text="debug"
  stars={}
  stars.number=76
  stars.game_stars={}
@@ -483,39 +480,7 @@ function draw_menu()
  draw_menu_footer()
  
  if btn(5) then
-  for i=0,#entities do
-   del(entities, entities[i])
-  end
-
-  -- init game
-  if game.initialized==false then
-   ship = make_ship(game.states.game,64,100)
-   make_cyclop(game.states.game,04,12,"red")
-   make_cyclop(game.states.game,24,12,"red")
-   make_cyclop(game.states.game,44,12,"red")
-   make_cyclop(game.states.game,64,12,"red")
-   make_cyclop(game.states.game,84,12,"red")
-   make_cyclop(game.states.game,104,12,"red")
-   make_cyclop(game.states.game,04,24,"green")
-   make_cyclop(game.states.game,24,24,"green")
-   make_cyclop(game.states.game,44,24,"green")
-   make_cyclop(game.states.game,64,24,"green")
-   make_cyclop(game.states.game,84,24,"green")
-   make_cyclop(game.states.game,104,24,"green")
-   make_cyclop(game.states.game,04,36,"yellow")
-   make_cyclop(game.states.game,24,36,"yellow")
-   make_cyclop(game.states.game,44,36,"yellow")
-   make_cyclop(game.states.game,64,36,"yellow")
-   make_cyclop(game.states.game,84,36,"yellow")
-   make_cyclop(game.states.game,104,36,"yellow")
-   game.initialized=true
-  end
-
-  stop_music()
-  start_music(1)
-
-  game.state = game.states.game
-
+  start_game()
  end
 
 end
@@ -527,6 +492,36 @@ function draw_menu_logo()
    y = 20 + cos(t1/30)*2 -- y pos for the logo + y of the animation
    spr(63+i, i*7.5 + x, y) -- sprite number,length,pos
  end
+end
+
+function start_game()
+  for k,v in pairs(entities) do entities[k]=nil end
+
+  -- init game
+  ship = make_ship(game.states.game,64,100)
+  make_cyclop(game.states.game,04,12,"red")
+  make_cyclop(game.states.game,24,12,"red")
+  make_cyclop(game.states.game,44,12,"red")
+  make_cyclop(game.states.game,64,12,"red")
+  make_cyclop(game.states.game,84,12,"red")
+  make_cyclop(game.states.game,104,12,"red")
+  make_cyclop(game.states.game,04,24,"green")
+  make_cyclop(game.states.game,24,24,"green")
+  make_cyclop(game.states.game,44,24,"green")
+  make_cyclop(game.states.game,64,24,"green")
+  make_cyclop(game.states.game,84,24,"green")
+  make_cyclop(game.states.game,104,24,"green")
+  make_cyclop(game.states.game,04,36,"yellow")
+  make_cyclop(game.states.game,24,36,"yellow")
+  make_cyclop(game.states.game,44,36,"yellow")
+  make_cyclop(game.states.game,64,36,"yellow")
+  make_cyclop(game.states.game,84,36,"yellow")
+  make_cyclop(game.states.game,104,36,"yellow")
+
+  stop_music()
+  start_music(1)
+
+  game.state = game.states.game
 end
 
 function make_menu_cyclop(game_state,x,y,color)
@@ -759,9 +754,14 @@ end
 -- game over
 
 function update_gameover()
+ if btn(5) then
+  game.state=game.states.menu
+ end
 end
 
 function draw_gameover()
+ print("game over", 45, 64, colors.red)
+ print("press ❎ key to start",24,90,colors.red)
 end
 
 -- utils
